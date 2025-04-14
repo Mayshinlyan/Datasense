@@ -1,5 +1,10 @@
 # Commands
 
+Docker Build and push
+```bash
+docker build -t us-central1-docker.pkg.dev/lamb-puppy-215354/datasense/backend .
+docker push us-central1-docker.pkg.dev/lamb-puppy-215354/datasense/backend
+```
 
 
 
