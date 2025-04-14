@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini</title>
+    <link rel="stylesheet" href="static/styles.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+    <div class="sidebar">
+        <button><span class="material-icons">menu</span></button>
+        <button><span class="material-icons">add</span></button>
+        <button><span class="material-icons">favorite_border</span></button>
+        <button><span class="material-icons">help_outline</span></button>
+        <button><span class="material-icons">history</span></button>
+        <button><span class="material-icons">settings</span></button>
+    </div>
+    
+    <div class="chat-container">
+        <div class="chat-header">
+            <img src="static/images/gemini-logo.png" alt="Gemini" class="gemini-logo">
+            <span style="margin-left: auto; color: #9aa0a6;">2.0 Flash</span>
+            <button class="try-advanced">Get Gemini with DataSense</button>
+            <span class="material-icons">apps</span>
+            <span class="material-icons">account_circle</span>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-container">
+                <h1 class="welcome-title">
+                    <span>Hello, <span>Clarence</span>
+                </h1>
+            </div>
+        </div>
+        
+        <div class="chat-input">
+            <div class="input-container">
+                <span class="material-icons">add</span>
+                <textarea id="userInput" placeholder="Ask Gemini" rows="1"></textarea>
+                <span class="material-icons">mic</span>
+                <button id="sendButton">
+                    <span class="material-icons">send</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="static/script.js"></script>
+</body>
+</html> 
