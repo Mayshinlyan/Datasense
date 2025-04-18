@@ -8,7 +8,18 @@ from google.genai.types import Part, Content
 
 from typing import List, Tuple, Union
 
+from similarity_search_tool import similarity_search
 from datasenseconfig import datasenseconfig
+
+import logging
+
+# Set up logging configuration
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
 
 
 def generate(chat_history: List[Content], user_turn: Union[Content,str]) -> Tuple[List[Content], Content]:
@@ -27,46 +38,52 @@ def generate(chat_history: List[Content], user_turn: Union[Content,str]) -> Tupl
         user_turn_content = user_turn
     else:
         raise TypeError("user_turn must be of type Content or str")
-    
+
     chat_history.append(user_turn_content)
 
+    # Configure the client and tool
     client = genai.Client(
         vertexai=True,
         project=datasenseconfig.gcp_project,
         location=datasenseconfig.gcp_location,
     )
 
+
     generate_content_config = types.GenerateContentConfig(
         temperature = datasenseconfig.model_temperature,
-        top_p = datasenseconfig.model_top_p,
-        max_output_tokens = datasenseconfig.model_max_output_tokens,
-        response_modalities = ["TEXT"], # We're only supporting TEXT for now.
-        safety_settings = [
-            types.SafetySetting(
-                category="HARM_CATEGORY_HATE_SPEECH",
-                threshold="OFF"
-            ),
-            types.SafetySetting(
-                category="HARM_CATEGORY_DANGEROUS_CONTENT",
-                threshold="OFF"
-            ),
-            types.SafetySetting(
-                category="HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                threshold="OFF"
-            ),
-            types.SafetySetting(
-                category="HARM_CATEGORY_HARASSMENT",
-                threshold="OFF"
-            )
-        ],
+        # top_p = datasenseconfig.model_top_p,
+        # max_output_tokens = datasenseconfig.model_max_output_tokens,
+        # response_modalities = ["TEXT"], # We're only supporting TEXT for now.
+        tools=[similarity_search],
+        # safety_settings = [
+        #     types.SafetySetting(
+        #         category="HARM_CATEGORY_HATE_SPEECH",
+        #         threshold="OFF"
+        #     ),
+        #     types.SafetySetting(
+        #         category="HARM_CATEGORY_DANGEROUS_CONTENT",
+        #         threshold="OFF"
+        #     ),
+        #     types.SafetySetting(
+        #         category="HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        #         threshold="OFF"
+        #     ),
+        #     types.SafetySetting(
+        #         category="HARM_CATEGORY_HARASSMENT",
+        #         threshold="OFF"
+        #     )
+        # ],
         system_instruction=[types.Part.from_text(text=datasenseconfig.system_instruction)],
     )
+
 
     response = client.models.generate_content(
         model = datasenseconfig.gcp_model,
         contents = chat_history,
         config = generate_content_config,
     )
+
+    logger.info(f"Model response received as: {response.text}")
 
     model_response_content = Content(
         role="assistant",
