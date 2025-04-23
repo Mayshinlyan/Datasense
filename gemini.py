@@ -8,8 +8,9 @@ from google.genai.types import Part, Content
 
 from typing import List, Tuple, Union
 
-from similarity_search_tool import similarity_search
-from datasenseconfig import datasenseconfig
+from config import get_settings
+from database import VectorStore
+from synthesizer import Synthesizer
 
 import logging
 
@@ -41,56 +42,64 @@ def generate(chat_history: List[Content], user_turn: Union[Content,str]) -> Tupl
 
     chat_history.append(user_turn_content)
 
-    # Configure the client and tool
-    client = genai.Client(
-        vertexai=True,
-        project=datasenseconfig.gcp_project,
-        location=datasenseconfig.gcp_location,
-    )
+    # # Configure the client and tool
+    # client = genai.Client(
+    #     vertexai=True,
+    #     project=datasenseconfig.gcp_project,
+    #     location=datasenseconfig.gcp_location,
+    # )
 
 
-    generate_content_config = types.GenerateContentConfig(
-        temperature = datasenseconfig.model_temperature,
-        # top_p = datasenseconfig.model_top_p,
-        # max_output_tokens = datasenseconfig.model_max_output_tokens,
-        # response_modalities = ["TEXT"], # We're only supporting TEXT for now.
-        tools=[similarity_search],
-        # safety_settings = [
-        #     types.SafetySetting(
-        #         category="HARM_CATEGORY_HATE_SPEECH",
-        #         threshold="OFF"
-        #     ),
-        #     types.SafetySetting(
-        #         category="HARM_CATEGORY_DANGEROUS_CONTENT",
-        #         threshold="OFF"
-        #     ),
-        #     types.SafetySetting(
-        #         category="HARM_CATEGORY_SEXUALLY_EXPLICIT",
-        #         threshold="OFF"
-        #     ),
-        #     types.SafetySetting(
-        #         category="HARM_CATEGORY_HARASSMENT",
-        #         threshold="OFF"
-        #     )
-        # ],
-        system_instruction=[types.Part.from_text(text=datasenseconfig.system_instruction)],
-    )
+    # generate_content_config = types.GenerateContentConfig(
+    #     temperature = datasenseconfig.model_temperature,
+    #     # top_p = datasenseconfig.model_top_p,
+    #     # max_output_tokens = datasenseconfig.model_max_output_tokens,
+    #     # response_modalities = ["TEXT"], # We're only supporting TEXT for now.
+    #     tools=[similarity_search],
+    #     # safety_settings = [
+    #     #     types.SafetySetting(
+    #     #         category="HARM_CATEGORY_HATE_SPEECH",
+    #     #         threshold="OFF"
+    #     #     ),
+    #     #     types.SafetySetting(
+    #     #         category="HARM_CATEGORY_DANGEROUS_CONTENT",
+    #     #         threshold="OFF"
+    #     #     ),
+    #     #     types.SafetySetting(
+    #     #         category="HARM_CATEGORY_SEXUALLY_EXPLICIT",
+    #     #         threshold="OFF"
+    #     #     ),
+    #     #     types.SafetySetting(
+    #     #         category="HARM_CATEGORY_HARASSMENT",
+    #     #         threshold="OFF"
+    #     #     )
+    #     # ],
+    #     system_instruction=[types.Part.from_text(text=datasenseconfig.system_instruction)],
+    # )
 
 
-    response = client.models.generate_content(
-        model = datasenseconfig.gcp_model,
-        contents = chat_history,
-        config = generate_content_config,
-    )
+    # response = client.models.generate_content(
+    #     model = datasenseconfig.gcp_model,
+    #     contents = chat_history,
+    #     config = generate_content_config,
+    # )
+    vec = VectorStore()
+    results = vec.similarity_search(user_turn)
+    response = Synthesizer.generate_response(question=user_turn, context=results)
+    result = response.parsed
 
-    logger.info(f"Model response received as: {response.text}")
+    bot_answer = result.answer
+    video_file_link = result.file_link
+    enough_context = result.enough_context
+
+    logger.info(f"Model response received as: {bot_answer} with video link: {video_file_link}")
 
     model_response_content = Content(
         role="assistant",
         parts=[
-            Part.from_text(text=response.text)
+            Part.from_text(text=bot_answer)
         ]
     )
 
-    return (chat_history, model_response_content)
+    return (chat_history, model_response_content, video_file_link, enough_context)
 

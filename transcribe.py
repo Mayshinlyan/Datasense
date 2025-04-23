@@ -48,7 +48,7 @@ def initialize_client():
 
 from google.cloud import videointelligence
 
-def extractVideoTranscript(gcs_uri: str):
+async def extractVideoTranscript(gcs_uri: str):
     """Transcribe speech from a video stored on GCS."""
 
     video_client = videointelligence.VideoIntelligenceServiceClient()
@@ -59,7 +59,9 @@ def extractVideoTranscript(gcs_uri: str):
     )
     video_context = videointelligence.VideoContext(speech_transcription_config=config)
 
-    operation = video_client.annotate_video(
+    logger.info("\nProcessing video.")
+
+    operation = await video_client.annotate_video(
         request={
             "features": features,
             "input_uri": gcs_uri,
@@ -67,31 +69,18 @@ def extractVideoTranscript(gcs_uri: str):
         }
     )
 
-    logger.info("\nProcessing video.")
-
-
-    result = operation.result(timeout=600)
+    result = operation.result()
 
     annotation_results = result.annotation_results[0]
 
-    logger.info(result)
+    # logger.info(result)
 
-    with open(f"./data/output.txt", 'a') as f:
-        for speech_transcription in annotation_results.speech_transcriptions:
-            for alternative in speech_transcription.alternatives:
-                # print("Alternative level information:")
-                # print("Transcript: {}".format(alternative.transcript))
-                # print("Confidence: {}\n".format(alternative.confidence))
+    logger.info(annotation_results)
 
-                f.write(alternative.transcript)
-                # f.write("Confidence: {}\n".format(alternative.confidence))
+    return annotation_results
 
-
-
-    logger.info( annotation_results )
-
-# Prepare data for insertion
-def prepare_record(videoFilePath: str, transcriptFilePath: str, partner: str):
+# compile the videos data into one data file
+def insert_transcript_to_csv(videoFilePath: str, transcript: str, partner: str):
     """Prepare a record for insertion into the vector store.
 
     This function creates a record with a UUID version 1 as the ID, which captures
@@ -99,17 +88,11 @@ def prepare_record(videoFilePath: str, transcriptFilePath: str, partner: str):
 
     """
 
-    with open(transcriptFilePath, 'r') as f:
-        transcript = f.read()
-        logger.info(f"Loaded Transcript")
-
     record = pd.Series(
         {
             "id": str(uuid.uuid1()),
-            "metadata": {
-                "partner": partner,
-                "created_at": datetime.now().isoformat(),
-            },
+            "partner": partner,
+            "created_at": datetime.now().isoformat(),
             "video_file_path": videoFilePath,
             "transcript": transcript
         }
@@ -118,22 +101,35 @@ def prepare_record(videoFilePath: str, transcriptFilePath: str, partner: str):
     # Convert the record to a DataFrame
     df = pd.DataFrame([record])
 
-    # # Set the 'uuid_col' as the index
-    # df.set_index('id', inplace=True)
-
-    if os.path.exists("./data/out.csv"):
-        df.to_csv("./data/out.csv", mode='a', header=False, index=False)
+    if os.path.exists("../data/out.csv"):
+        df.to_csv("../data/out.csv", mode='a', header=False, index=False)
     else:
-        df.to_csv("./data/out.csv", mode='w', header=True, index=False)
+        df.to_csv("../data/out.csv", mode='w', header=True, index=False)
 
-    log.info(f"Prepared record for {videoFilePath}")
+    logger.info(f"Inserted {videoFilePath} to CSV")
+
+    return df
+
+def main():
+    """Main function to run the script."""
+    # Initialize the GenAI client
+    client = initialize_client()
+
+    # Example file path and transcript - innovation video
+    transcript = extractVideoTranscript("gs://maylyan-rag-test/HFIN_2621_BCS_R.mp4")
+    partner = "Hearst Television"
+    videofilepath = "https://storage.mtls.cloud.google.com/maylyan-rag-test/HFIN_2621_BCS_R.mp4"
+
+    # Prepare the record
+    insert_transcript_to_csv(videofilepath, transcript, partner)
 
 
-# Example file path and transcript
-transcript = "./data/innovation_transcript.txt"
-partner = "Hearst Television"
-videofilepath = "https://drive.google.com/corp/drive/folders/1UkenEMoNWJoAdH3OSROPnA5OtN5WCDyH"
 
-# Prepare the record
-prepare_record(videofilepath, transcript, partner)
+    # Example file path and transcript - dog
+    transcript = extractVideoTranscript("gs://maylyan-rag-test/LDOG_3387_BCS.mp4")
+    partner = "Hearst Television"
+    videofilepath = "https://storage.mtls.cloud.google.com/maylyan-rag-test/LDOG_3387_BCS.mp4"
+
+    # Prepare the record
+    insert_transcript_to_csv(videofilepath, transcript, partner)
 

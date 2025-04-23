@@ -39,7 +39,7 @@ Would you like to access premium data insights from our airline partners about s
             shouldShowUpgrade: true
         }
     ],
-    
+
     basicResponse: {
         role: 'assistant',
         content: `Here are some general tips for getting business class upgrades:
@@ -127,7 +127,7 @@ class ChatInterface {
         this.isTyping = false;
         this.initializeEventListeners();
         // Start the demo after a short delay
-        // ampma: 
+        // ampma:
         // setTimeout(() => this.startDemo(), 500);
     }
 
@@ -171,7 +171,7 @@ class ChatInterface {
 
     async startDemo() {
         let skipTyping = false;
-        
+
         // Add event listener for Enter key
         const skipHandler = (e) => {
             if (e.key === 'Enter') {
@@ -182,7 +182,7 @@ class ChatInterface {
 
         // Wait for initial load
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
+
         // Clear welcome message
         const welcomeContainer = document.querySelector('.welcome-container');
         welcomeContainer.classList.add('fade-out');
@@ -200,7 +200,7 @@ class ChatInterface {
                 await new Promise(resolve => setTimeout(resolve, 20));
             }
         }
-        
+
         inputElement.value = firstQuestion;
         await new Promise(resolve => setTimeout(resolve, 300));
         inputElement.value = '';
@@ -211,7 +211,7 @@ class ChatInterface {
 
         // Second exchange
         const secondQuestion = conversationFlow.initialMessages[2].content;
-        
+
         if (!skipTyping) {
             for (let i = 0; i < secondQuestion.length; i++) {
                 if (skipTyping) break;
@@ -219,7 +219,7 @@ class ChatInterface {
                 await new Promise(resolve => setTimeout(resolve, 20));
             }
         }
-        
+
         inputElement.value = secondQuestion;
         await new Promise(resolve => setTimeout(resolve, 300));
         inputElement.value = '';
@@ -245,9 +245,9 @@ class ChatInterface {
             welcomeContainer.remove();
          }
 
-        
+
         if (messageText === '' || this.isTyping) return;
-        
+
         inputElement.value = '';
         await this.addMessage('user', messageText);
 
@@ -255,7 +255,7 @@ class ChatInterface {
         // Get the next assistant message
         const nextMessage = conversationFlow.initialMessages[this.currentMessageIndex + 1];
         await this.addMessage('assistant', nextMessage.content);
-        
+
         this.currentMessageIndex += 2;
 
         // Show upgrade modal after third exchange
@@ -273,7 +273,7 @@ class ChatInterface {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     message: messageText,
                     chatHistory: this.chatHistory
                  })
@@ -287,7 +287,7 @@ class ChatInterface {
             console.log('Response from le /chat: ', data);
 
             // Handle response from the server
-            await this.addMessage('assistant', data.modelResponse.parts[0].text, data.premiumFlag)
+            await this.addMessage('assistant', data.modelResponse.parts[0].text, data.premiumFlag, data.videoFileLink)
 
             // Check if premium content should be shown
             //if (data.premiumFlag) {
@@ -302,13 +302,13 @@ class ChatInterface {
         }
     }
 
-    async addMessage(role, content, isPremium) {
+    async addMessage(role, content, isPremium, videoFileLink) {
         const chatMessages = document.getElementById('chatMessages');
         const messageDiv = document.createElement('div');
 
         // ampma: Add message to chatHistory
         this.chatHistory.push({role: role, content: content, isPremium: isPremium})
-        
+
         if (role === 'user') {
             messageDiv.className = 'user-message';
             messageDiv.textContent = content;
@@ -316,11 +316,22 @@ class ChatInterface {
         } else if (role === 'assistant') {
             messageDiv.className = 'message ai-message';
             const formattedContent = content.replace(/\n/g, '<br>');
-            
+
+            // display video link if available
+
+
+            const videoChip = isPremium ? ` <div class="premium-prompt-chip">
+            <span class="material-icons">verified</span>
+            <button class="try-now-button"> <a class='video-link' href="${videoFileLink}" target="_blank">Watch Video</a></button>
+
+            </div>` : '';
+            console.log('video chip', videoChip);
+
+
             // ampma: Override below - we'll add premium chip IF premiumFlag is set.
             // Add premium chip if this is the second answer
             //const isPremiumPrompt = content === conversationFlow.initialMessages[3].content;
-            const isPremiumPrompt = isPremium;
+            const isPremiumPrompt = false;
             const premiumChip = isPremiumPrompt ? `
                     <div class="premium-prompt-chip">
                         <span class="material-icons">verified</span>
@@ -336,7 +347,7 @@ class ChatInterface {
                 </div>
                 <div class="message-content">
                     <div style="white-space: pre-line">${formattedContent}</div>
-                    ${premiumChip}
+                    ${videoChip}
                     <div class="message-actions">
                         <button title="Like">
                             <span class="material-icons">thumb_up</span>
@@ -362,7 +373,7 @@ class ChatInterface {
                 messageDiv.querySelector('.message-avatar').classList.remove('typing');
             }, 1000);
         }
-        
+
         smoothScrollTo(chatMessages, chatMessages.scrollHeight);
     }
 
@@ -385,9 +396,9 @@ class ChatInterface {
                 </div>
                 <h2>Upgrade to DataSense</h2>
                 <p class="subtitle">Your inital answer was based on fair-use content and publicly available data.</p>
-                
+
                 <p class="subtitle">DataSense answers leverage proprietary partner data / content. Enhance your answer with exclusive insights from <strong>American Airlines, Qantas</strong> and <strong>Delta</strong>.</p>
-                
+
                 <div class="upgrade-options">
                     <button id="continue" class="option-button">
                         <span>No Thanks</span>
@@ -426,7 +437,7 @@ class ChatInterface {
 
         const adOverlay = document.createElement('div');
         adOverlay.className = 'ad-overlay';
-        
+
         // Create ad container
         adOverlay.innerHTML = `
             <div class="ad-container">
@@ -435,22 +446,22 @@ class ChatInterface {
                     <button class="skip-button" disabled>Skip Ad (5)</button>
                 </div>
                 <div class="ad-iframe-container">
-                    <iframe 
-                        src="https://www.youtube.com/embed/G4h14tc2wHo?autoplay=1" 
-                        title="YouTube video player" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    <iframe
+                        src="https://www.youtube.com/embed/G4h14tc2wHo?autoplay=1"
+                        title="YouTube video player"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowfullscreen>
                     </iframe>
                 </div>
             </div>
         `;
-        
+
         document.body.appendChild(adOverlay);
 
         // Handle skip button countdown
         const skipButton = adOverlay.querySelector('.skip-button');
         let timeLeft = 5;
-        
+
         const countdownInterval = setInterval(() => {
             timeLeft--;
             if (timeLeft > 0) {
@@ -575,7 +586,7 @@ class ChatInterface {
             buyModal.classList.add('fade-out');
             await new Promise(resolve => setTimeout(resolve, 300));
             buyModal.remove();
-            
+
             // Show success toast
             const toast = document.createElement('div');
             toast.className = 'success-toast';
@@ -640,7 +651,7 @@ function smoothScrollTo(element, target) {
         if (startTime === null) startTime = currentTime;
         const timeElapsed = currentTime - startTime;
         const progress = Math.min(timeElapsed / duration, 1);
-        
+
         element.scrollTop = start + distance * easeInOutQuad(progress);
 
         if (timeElapsed < duration) {
@@ -658,4 +669,4 @@ function smoothScrollTo(element, target) {
 // Initialize the chat interface when the page loads
 document.addEventListener('DOMContentLoaded', () => {
     window.chatInterface = new ChatInterface();
-}); 
+});

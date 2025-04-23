@@ -284,7 +284,7 @@ body {
 }
 
 .upgrade-container .modal-content {
-    background: linear-gradient(0deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)), 
+    background: linear-gradient(0deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)),
                 linear-gradient(130.56deg, #4285F4 30.05%, #D96570 94.97%);
     padding: 32px;
     border-radius: 24px;
@@ -1225,6 +1225,15 @@ body {
     background: #3b78e7;
 }
 
+.video-link {
+
+    color: white;
+    text-decoration: none;
+
+}
+
+
+
 .credit-option.subscription {
     border: 2px solid #4285F4;
     background: rgba(66, 133, 244, 0.1);
@@ -1244,4 +1253,4 @@ body {
 /* Update order summary when subscription is selected */
 .credit-option.subscription input:checked ~ .credit-content {
     background: rgba(66, 133, 244, 0.15);
-} 
+}

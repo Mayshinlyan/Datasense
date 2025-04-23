@@ -22,9 +22,13 @@ def chat_response(history_obj: List[Dict], user_input: str) -> Dict:
             content_history.append(Content(role='user', parts=[Part.from_text(text=item['content'])]))
         elif item['role'] == 'assistant':
             content_history.append(Content(role='assistant', parts=[Part.from_text(text=item['content'])]))
-        
-            
-    content_history, model_response = generate(content_history, user_input)
+
+
+    content_history, model_response, video_file_link, enough_context = generate(content_history, user_input)
     print("Model response received.")
-    premium_flag = premium_applicable(history_obj)
-    return {"chatHistory": history_obj, "modelResponse": model_response, "premiumFlag": premium_flag}
+
+    if video_file_link!="N/A" and enough_context==True:
+        premium_flag = True
+    else:
+        premium_flag = False
+    return {"chatHistory": history_obj, "modelResponse": model_response, "premiumFlag": premium_flag, "videoFileLink": video_file_link}

@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.exceptions import HTTPException
 
 import datasense as ds
-from datasenseconfig import datasenseconfig
+from config import get_settings
 from datasense_types import UserMessage
 
 app = FastAPI()
@@ -14,13 +14,13 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 print("Datasense Server starting up.")
-print("Project: ", datasenseconfig.gcp_project)
-print("Location: ", datasenseconfig.gcp_location)
-print("Model: ", datasenseconfig.gcp_model)
-print("Temperature: ", datasenseconfig.model_temperature)
-print("Top P: ", datasenseconfig.model_top_p)
-print("Max Output Tokens: ", datasenseconfig.model_max_output_tokens)
-print("System Instruction: ", datasenseconfig.system_instruction)
+print("Project: ", get_settings().llm.gcp_project)
+print("Location: ", get_settings().llm.gcp_location)
+print("Model: ", get_settings().llm.gcp_model)
+print("Temperature: ", get_settings().llm.model_temperature)
+print("Top P: ", get_settings().llm.model_top_p)
+print("Max Output Tokens: ", get_settings().llm.model_max_output_tokens)
+print("System Instruction: ", get_settings().llm.system_instruction)
 
 @app.get("/")
 async def root():

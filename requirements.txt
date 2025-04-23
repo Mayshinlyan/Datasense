@@ -10,3 +10,4 @@ langchain-community
 pip
 ipykernel
 pg8000
+pandas
