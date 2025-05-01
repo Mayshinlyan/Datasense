@@ -8,6 +8,8 @@ import pandas as pd
 import logging
 from langchain_google_alloydb_pg.indexes import IVFFlatIndex
 from typing import Any, List, Optional, Tuple, Union
+from google.cloud.alloydb.connector import Connector, IPTypes
+from sqlalchemy import text
 
 def setup_logging():
     """Configure basic logging for the application."""
@@ -29,24 +31,47 @@ class VectorStore:
         """Initialize the VectorStore with settings, AlloyDB Vector client."""
         self.settings = get_settings().database
 
-        self.engine = AlloyDBEngine.from_instance(
-            self.settings.db_project , self.settings.db_location, self.settings.cluster, self.settings.instance, self.settings.database, self.settings.dbuser, self.settings.dbpassword
-        )
-        logger.info("Successfully created AlloyDBEngine instance.")
+        # self.engine = AlloyDBEngine.from_instance(
+        #     self.settings.db_project , self.settings.db_location, self.settings.db_location, self.settings.instance, self.settings.database, self.settings.dbuser, self.settings.dbpassword
+        # )
+        # logger.info("Successfully created AlloyDBEngine instance.")
 
 
-        # Initialize the vector store
-        self.vector_store = AlloyDBVectorStore.create_sync(
-            self.engine,
-            table_name=self.settings.table,
-            embedding_service=VertexAIEmbeddings(
-                model_name="text-embedding-005", project=self.settings.db_project
-            )
-        )
+        # # Initialize the vector store
+        # self.vector_store = AlloyDBVectorStore.create_sync(
+        #     self.engine,
+        #     table_name=self.settings.table,
+        #     embedding_service=VertexAIEmbeddings(
+        #         model_name="text-embedding-005", project=self.settings.db_project
+        #     )
+        # )
         logger.info("Initialized the vector store.")
 
+    async def create_db(self):
+        """Create the database"""
+        try:
+            engine =  await AlloyDBEngine.afrom_instance(
+                'lamb-puppy-215354',
+                'us-central1',
+                'datasense',
+                'datasense-primary',
+                database="postgres",
+                user="postgres",
+                password='5kL<?7{OXq]a',
+            )
+
+            with engine._pool.connect() as conn:
+                await print('hi')
+
+            async with engine._pool.connect() as conn:
+                await conn.execute(text("COMMIT"))
+                await conn.execute(text(f"CREATE DATABASE {self.settings.database}"))
+            logger.info(f"Successfully created the database: '{self.settings.database}'.")
+        except Exception as e:
+             logger.error(f"Error creating AlloyDBEngine or initializing table: {e}")
+
     def create_table(self):
-        """Create the necessary tablesin the database"""
+        """Create the necessary tables in the database"""
         try:
             self.engine.ainit_vectorstore_table(
                 table_name=self.settings.table,
@@ -142,3 +167,10 @@ class VectorStore:
 
     # results = [Document(metadata={'source': '../data/out.csv', 'row': 1, 'id': 'f79e6bbc-1d5f-11f0-9d3f-fa0a240152c3', 'partner': 'Hearst Television', 'created_at': '2025-04-19T13:50:46.193881', 'video_file_path': 'https://drive.google.com/corp/drive/folders/1UkenEMoNWJoAdH3OSROPnA5OtN5WCDyH'}, page_content="transcript: Welcome to the Henry Ford's Innovation Nation. I'm Mo Rocca and today will astonish you. Coming up the Precision."),
     # Document(metadata={'source': '../data/out.csv', 'row': 0, 'id': 'f3b08f26-1d5f-11f0-9d3f-fa0a240152c3', 'partner': 'Hearst Television', 'created_at': '2025-04-19T13:50:39.601865', 'video_file_path': 'https://drive.google.com/file/d/1uxYSvoZvTjRcWk-dutVjjTMCsytkfuX6/'}, page_content="transcript: I'm Brandon McMillan. And for 7 years")]
+
+    async def main():
+        vec = VectorStore()
+
+        db = await vec.create_db()
+
+    main()

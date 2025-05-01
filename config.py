@@ -34,7 +34,7 @@ class LLMSettings(BaseModel):
     """
     debug_mode: bool = _get_config_variable("DEBUG_MODE", "False")
 
-    gcp_project: str = _get_config_variable("GCP_PROJECT", "maylyan-test")
+    gcp_project: str = _get_config_variable("GCP_PROJECT", "lamb-puppy-215354")
     gcp_location: str = _get_config_variable("GCP_LOCATION", "us-central1")
     gcp_model: str = _get_config_variable("GCP_MODEL", 'gemini-2.0-flash-001')
 
@@ -50,15 +50,15 @@ class DatabaseSettings(BaseModel):
     """
     Database specific configuration
     """
-    db_project: str = _get_config_variable("GCP_PROJECT", "maylyan-test")
+    db_project: str = _get_config_variable("GCP_PROJECT", "lamb-puppy-215354")
     db_location: str = _get_config_variable("GCP_LOCATION", "us-central1")
     cluster: str = _get_config_variable("DB_CLUSTER", 'datasense')
-    instance: str = _get_config_variable("DB_INSTANCE", 'datasense')
+    instance: str = _get_config_variable("DB_INSTANCE", 'datasense-primary')
     database: str = _get_config_variable("DB_DATABASE", 'datasensedb')
-    table: str = _get_config_variable("YDB_TABLE_NAME", 'datasensehearst')
+    table: str = _get_config_variable("YDB_TABLE_NAME", 'partnertable')
     dbuser: str = _get_config_variable("DB_USER", 'postgres')
-    dbpassword: str = _get_config_variable("DB_PASSWORD", 'datasense')
-    staging_bucket: str = _get_config_variable("DB_STAGING_BUCKET", "gs://alloydb_vectorstore")
+    dbpassword: str = _get_config_variable("DB_PASSWORD", '5kL<?7{OXq]a')
+    staging_bucket: str = _get_config_variable("DB_STAGING_BUCKET", "gs://datasense_alloydb_vectorstore")
 
 
 class Settings(BaseModel):
@@ -68,7 +68,7 @@ class Settings(BaseModel):
     database: DatabaseSettings = Field(default_factory=DatabaseSettings)
 
 
-@lru_cache()
+@lru_cache
 def get_settings() -> Settings:
     """Create and return a cached instance of the Settings."""
     settings = Settings()
