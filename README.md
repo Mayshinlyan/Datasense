@@ -2,31 +2,16 @@
 
 1. Pull the ‘maylyan-dev’ branch from the github repository
 2. Open the repo in your local code editor eg: VS Code
-3. Create .env file outside of the x-datasense folder. So the folder structure is going to be like this.
+3. Create a python virtualenv. You can use conda, or venv. For python venv use ```python3 -m venv ./.venv```
+4. The .env file will hold environment variables for the container when deployed and when running the app locally. Use the .env_example as an example of how to configure this.
+5. Create .env file outside of the x-datasense folder. So the folder structure is going to be like this.
     - X-datasense
         - Static
         - other files
     - .env
-
-4. Copy the following content into your .env file
-
-```python
-    GEMINI_API_KEY=Replace this with your Gemini API Key
-    GCP_PROJECT="lamb-puppy-215354"
-    GCP_LOCATION="us-central1"
-    MODEL_ID = "gemini-2.0-flash-001”
-
-    DB_STAGING_BUCKET="gs://datasense_alloydb_vectorstore"
-    DB_CLUSTER="datasense"
-    DB_INSTANCE="datasense-primary"
-    DB_DATABASE="datasensedb"
-    DB_TABLE_NAME="partnertable"
-    DB_PASSWORD="5kL<?7{OXq]a"
-    DB_USER="postgres”
-```
-5. cd into X-Datasense folder in your terminal
-6. Do ```pip install requirements.txt``` to install the necessary packages
-7. Run the file locally by running ```uvicorn main:app --reload```
+6. cd into X-Datasense folder in your terminal
+7. Do ```pip install requirements.txt``` to install the necessary packages
+8. Run the file locally by running ```uvicorn main:app --reload```
 
 
 # RAG Architecture Explanation
