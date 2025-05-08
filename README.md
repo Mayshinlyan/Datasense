@@ -11,6 +11,7 @@
     - .env
 6. cd into X-Datasense folder in your terminal
 7. Do ```pip install requirements.txt``` to install the necessary packages
+    If you use venv run this: pip install -r requirements.txt
 8. Run the file locally by running ```uvicorn main:app --reload```
 
 

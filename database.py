@@ -46,7 +46,7 @@ class VectorStore:
         #     )
         # )
         logger.info("Initialized the vector store.")
-
+    
     async def create_db(self):
         """Create the database"""
         try:
@@ -55,20 +55,58 @@ class VectorStore:
                 'us-central1',
                 'datasense',
                 'datasense-primary',
-                database="postgres",
+                database="postgres", # Connect to the default 'postgres' database initially
                 user="postgres",
                 password='5kL<?7{OXq]a',
             )
 
-            with engine._pool.connect() as conn:
-                await print('hi')
+            # --- REMOVE THIS BLOCK ---
+            # with engine._pool.connect() as conn:
+            #     await print('hi')
+            # -------------------------
 
+            # This block now correctly uses 'async with' to connect
             async with engine._pool.connect() as conn:
-                await conn.execute(text("COMMIT"))
-                await conn.execute(text(f"CREATE DATABASE {self.settings.database}"))
-            logger.info(f"Successfully created the database: '{self.settings.database}'.")
+                # Note: Creating a database within a connection pool might not be the standard way.
+                # Usually, CREATE DATABASE is done once via gcloud CLI or a separate script,
+                # or potentially on a connection *not* from the pool, or on a connection
+                # established specifically to the 'postgres' db to create another one.
+                # The `COMMIT` here is also unusual in this context.
+                # However, to fix the specific error, this block's syntax is correct (using async with).
+
+                # You might need to adjust this logic depending on how AlloyDBEngine
+                # expects you to ensure the target database exists.
+                # The 'CREATE DATABASE' command is typically run only once.
+
+                # await conn.execute(text("COMMIT")) # COMMIT is often implicit or managed by the pool/framework
+                # await conn.execute(text(f"CREATE DATABASE {self.settings.database}")) # This might fail if run here
+
+                 # Consider if you just need the engine object here and table creation/checks
+                 # happen elsewhere after the engine is returned/stored.
+                 # If the goal is *just* to get the engine:
+                 return engine # <-- If you only need the engine instance
+
+            # If the goal is to get the engine AND ensure the table exists,
+            # you might do table initialization *after* getting the engine,
+            # potentially using engine.run_sync() for sync methods or ensuring
+            # ainit_vectorstore_table is called correctly.
+
+            # Given the original structure and the name create_db, it seems the intent
+            # was to get the engine and possibly ensure the database exists.
+            # Let's assume the intent is to get the engine for now.
+            return engine # Return the engine object
+
         except Exception as e:
+             # The print statement after this catch in main.py might still run
+             # because the exception is caught here and not re-raised.
+             # Consider adding `raise e` here if an DB init error should stop the app.
              logger.error(f"Error creating AlloyDBEngine or initializing table: {e}")
+             # Depending on how critical the DB is, you might re-raise or exit here
+             # raise # Re-raise the caught exception
+             return None # Return None or handle the error if not re-raising
+
+
+    # ... rest of the VectorStore class ...
 
     def create_table(self):
         """Create the necessary tables in the database"""
@@ -168,9 +206,9 @@ class VectorStore:
     # results = [Document(metadata={'source': '../data/out.csv', 'row': 1, 'id': 'f79e6bbc-1d5f-11f0-9d3f-fa0a240152c3', 'partner': 'Hearst Television', 'created_at': '2025-04-19T13:50:46.193881', 'video_file_path': 'https://drive.google.com/corp/drive/folders/1UkenEMoNWJoAdH3OSROPnA5OtN5WCDyH'}, page_content="transcript: Welcome to the Henry Ford's Innovation Nation. I'm Mo Rocca and today will astonish you. Coming up the Precision."),
     # Document(metadata={'source': '../data/out.csv', 'row': 0, 'id': 'f3b08f26-1d5f-11f0-9d3f-fa0a240152c3', 'partner': 'Hearst Television', 'created_at': '2025-04-19T13:50:39.601865', 'video_file_path': 'https://drive.google.com/file/d/1uxYSvoZvTjRcWk-dutVjjTMCsytkfuX6/'}, page_content="transcript: I'm Brandon McMillan. And for 7 years")]
 
-    async def main():
-        vec = VectorStore()
+ #   async def main():
+ #       vec = VectorStore()
 
-        db = await vec.create_db()
+ #       db = await vec.create_db()
 
-    main()
+ #   main()

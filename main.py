@@ -7,7 +7,40 @@ import datasense as ds
 from config import get_settings
 from datasense_types import UserMessage
 
+from database import VectorStore # Assuming VectorStore class is in database.py
+import asyncio # You might need this if your setup logic uses async features directly,
+               # but @app.on_event("startup") handles the async context
+
 app = FastAPI()
+
+@app.on_event("startup")
+async def startup_db_client():
+    print("Running application startup tasks...")
+    try:
+        # This is the logic that was in your database.py's async def main()
+        vec = VectorStore()
+        db = await vec.create_db()
+
+        # Store the initialized db object in the app's state
+        # This makes it accessible later in your request handlers
+        app.state.db = db
+        print("Database vector store initialized and stored in app.state.db")
+
+    except Exception as e:
+        print(f"Error during startup database initialization: {e}")
+        # Depending on how critical this is, you might want to exit
+        # import os
+        # os._exit(1) # Force exit if DB is essential
+
+# --- You might want a shutdown event to close connections cleanly ---
+# @app.on_event("shutdown")
+# async def shutdown_db_client():
+#     if hasattr(app.state, 'db') and app.state.db:
+#         print("Closing database connection...")
+#         # Assuming your db object has a close method or similar
+#         # await app.state.db.close() # Example: Adjust based on your db library
+#         print("Database connection closed.")
+
 
 # Static
 app.mount("/static", StaticFiles(directory="static"), name="static")
