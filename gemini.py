@@ -83,7 +83,9 @@ def generate(chat_history: List[Content], user_turn: Union[Content,str]) -> Tupl
     #     contents = chat_history,
     #     config = generate_content_config,
     # )
+    logger.info("initializing vector store...")
     vec = VectorStore()
+    logger.info("similarity search...")
     results = vec.similarity_search(user_turn)
     response = Synthesizer.generate_response(question=user_turn, context=results)
     result = response.parsed

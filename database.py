@@ -31,12 +31,12 @@ class VectorStore:
         """Initialize the VectorStore with settings, AlloyDB Vector client."""
         self.settings = get_settings().database
 
-        # self.engine = AlloyDBEngine.from_instance(
-        #     self.settings.db_project , self.settings.db_location, self.settings.db_location, self.settings.instance, self.settings.database, self.settings.dbuser, self.settings.dbpassword
-        # )
-        # logger.info("Successfully created AlloyDBEngine instance.")
+        self.engine = AlloyDBEngine.from_instance(
+            self.settings.db_project , self.settings.db_location, self.settings.cluster, self.settings.instance, self.settings.database, self.settings.dbuser, self.settings.dbpassword
+        )
+        logger.info("Successfully created AlloyDBEngine instance.")
 
-
+        self.vector_store = None
         # # Initialize the vector store
         # self.vector_store = AlloyDBVectorStore.create_sync(
         #     self.engine,
@@ -164,7 +164,7 @@ class VectorStore:
         Returns:
         List[Document]: A list of Documents
         """
-
+        logging.info(f"vetor_store is not NONE: {self.vector_store is not None}")
         docs = self.vector_store.similarity_search(query, k=5)
 
         # retriever = self.vector_store.as_retriever(search_type="similarity_score_threshold",
