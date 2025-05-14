@@ -59,6 +59,8 @@ class DatabaseSettings(BaseModel):
     dbuser: str = _get_config_variable("DB_USER", 'postgres')
     dbpassword: str = _get_config_variable("DB_PASSWORD", '5kL<?7{OXq]a')
     staging_bucket: str = _get_config_variable("DB_STAGING_BUCKET", "gs://datasense_alloydb_vectorstore")
+    embedding_vector_size: int = _get_config_variable("EMBEDDING_VECTOR_SIZE", "768")
+    embedding_model: str = _get_config_variable("EMBEDDING_MODEL", "text-embedding-005")
 
 
 class Settings(BaseModel):

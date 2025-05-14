@@ -19,12 +19,8 @@ async def startup_db_client():
     try:
         # This is the logic that was in your database.py's async def main()
         vec = VectorStore()
-        db = await vec.create_db()
-
-        # Store the initialized db object in the app's state
-        # This makes it accessible later in your request handlers
-        app.state.db = db
-        print("Database vector store initialized and stored in app.state.db")
+        app.state.vector_store = vec
+        print("vector store initialized and stored in app.state.vector_store.")
 
     except Exception as e:
         print(f"Error during startup database initialization: {e}")
@@ -69,7 +65,7 @@ async def post_chat(user_message: UserMessage):
     Validates if premium dataset applies to response, sets premium flag if so.
     """
     try:
-        response = ds.chat_response(user_message.chatHistory, user_message.message)
+        response = ds.chat_response(user_message.chatHistory, user_message.message, app.state.vector_store)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

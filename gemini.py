@@ -23,7 +23,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def generate(chat_history: List[Content], user_turn: Union[Content,str]) -> Tuple[List[Content], Content]:
+def generate(chat_history: List[Content], user_turn: Union[Content,str], vec: VectorStore) -> Tuple[List[Content], Content]:
     """
     Call the model, handles both Content and Str type inputs.
     """
@@ -83,10 +83,12 @@ def generate(chat_history: List[Content], user_turn: Union[Content,str]) -> Tupl
     #     contents = chat_history,
     #     config = generate_content_config,
     # )
-    logger.info("initializing vector store...")
-    vec = VectorStore()
-    logger.info("similarity search...")
+    logger.info("Generating response...")
+    if vec is None:
+        raise ValueError("Vector store should not be None.")
+    logger.info("starting similarity search...")
     results = vec.similarity_search(user_turn)
+    logger.info(f"Results from similarity search of vector store: {results}")
     response = Synthesizer.generate_response(question=user_turn, context=results)
     result = response.parsed
 

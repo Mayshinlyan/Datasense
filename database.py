@@ -9,7 +9,7 @@ import logging
 from langchain_google_alloydb_pg.indexes import IVFFlatIndex
 from typing import Any, List, Optional, Tuple, Union
 from google.cloud.alloydb.connector import Connector, IPTypes
-from sqlalchemy import text
+from sqlalchemy import text, inspect
 
 def setup_logging():
     """Configure basic logging for the application."""
@@ -30,27 +30,22 @@ class VectorStore:
     def __init__(self):
         """Initialize the VectorStore with settings, AlloyDB Vector client."""
         self.settings = get_settings().database
-
-        self.engine = AlloyDBEngine.from_instance(
-            self.settings.db_project , self.settings.db_location, self.settings.cluster, self.settings.instance, self.settings.database, self.settings.dbuser, self.settings.dbpassword
+        self.engine = self.create_db()
+        self.create_table() # Create the table if it doesn't exist
+        
+        embedding_service=VertexAIEmbeddings(
+            model_name=self.settings.embedding_model, project=self.settings.db_project
         )
-        logger.info("Successfully created AlloyDBEngine instance.")
-
-        self.vector_store = None
-        # # Initialize the vector store
-        # self.vector_store = AlloyDBVectorStore.create_sync(
-        #     self.engine,
-        #     table_name=self.settings.table,
-        #     embedding_service=VertexAIEmbeddings(
-        #         model_name="text-embedding-005", project=self.settings.db_project
-        #     )
-        # )
-        logger.info("Initialized the vector store.")
+        self.vector_store = AlloyDBVectorStore.create_sync(
+            self.engine,
+            table_name=self.settings.table,
+            embedding_service=embedding_service,
+        )
     
-    async def create_db(self):
+    def create_db(self):
         """Create the database"""
         try:
-            engine =  await AlloyDBEngine.afrom_instance(
+            engine =  AlloyDBEngine.from_instance(
                 'lamb-puppy-215354',
                 'us-central1',
                 'datasense',
@@ -60,40 +55,6 @@ class VectorStore:
                 password='5kL<?7{OXq]a',
             )
 
-            # --- REMOVE THIS BLOCK ---
-            # with engine._pool.connect() as conn:
-            #     await print('hi')
-            # -------------------------
-
-            # This block now correctly uses 'async with' to connect
-            async with engine._pool.connect() as conn:
-                # Note: Creating a database within a connection pool might not be the standard way.
-                # Usually, CREATE DATABASE is done once via gcloud CLI or a separate script,
-                # or potentially on a connection *not* from the pool, or on a connection
-                # established specifically to the 'postgres' db to create another one.
-                # The `COMMIT` here is also unusual in this context.
-                # However, to fix the specific error, this block's syntax is correct (using async with).
-
-                # You might need to adjust this logic depending on how AlloyDBEngine
-                # expects you to ensure the target database exists.
-                # The 'CREATE DATABASE' command is typically run only once.
-
-                # await conn.execute(text("COMMIT")) # COMMIT is often implicit or managed by the pool/framework
-                # await conn.execute(text(f"CREATE DATABASE {self.settings.database}")) # This might fail if run here
-
-                 # Consider if you just need the engine object here and table creation/checks
-                 # happen elsewhere after the engine is returned/stored.
-                 # If the goal is *just* to get the engine:
-                 return engine # <-- If you only need the engine instance
-
-            # If the goal is to get the engine AND ensure the table exists,
-            # you might do table initialization *after* getting the engine,
-            # potentially using engine.run_sync() for sync methods or ensuring
-            # ainit_vectorstore_table is called correctly.
-
-            # Given the original structure and the name create_db, it seems the intent
-            # was to get the engine and possibly ensure the database exists.
-            # Let's assume the intent is to get the engine for now.
             return engine # Return the engine object
 
         except Exception as e:
@@ -105,17 +66,16 @@ class VectorStore:
              # raise # Re-raise the caught exception
              return None # Return None or handle the error if not re-raising
 
-
-    # ... rest of the VectorStore class ...
-
     def create_table(self):
         """Create the necessary tables in the database"""
+
         try:
-            self.engine.ainit_vectorstore_table(
+            self.engine.init_vectorstore_table(
                 table_name=self.settings.table,
                 vector_size=768,  # Vector size for VertexAI model(text-embedding-005)
             )
             logger.info(f"Successfully initialized vectorstore table '{self.settings.table}'.")
+            
             return True  # Indicate success
         except Exception as e:
             logger.error(f"Error creating AlloyDBEngine or initializing table: {e}")
@@ -164,7 +124,6 @@ class VectorStore:
         Returns:
         List[Document]: A list of Documents
         """
-        logging.info(f"vetor_store is not NONE: {self.vector_store is not None}")
         docs = self.vector_store.similarity_search(query, k=5)
 
         # retriever = self.vector_store.as_retriever(search_type="similarity_score_threshold",
