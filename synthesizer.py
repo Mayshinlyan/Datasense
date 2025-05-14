@@ -87,7 +87,6 @@ class Synthesizer:
             project=get_settings().llm.gcp_project,
             location=get_settings().llm.gcp_location,
         )
-
         generate_content_config = types.GenerateContentConfig(
             temperature = 0.0,
             system_instruction=SYSTEM_PROMPT,
@@ -95,15 +94,11 @@ class Synthesizer:
             response_schema=SynthesizedResponse,
             tools=[]
         )
-
         response = client.models.generate_content(
             model = "gemini-2.0-flash-001",
             contents = question,
             config = generate_content_config,
         )
-
-        logger.info(f"Model response received as: {response.text}")
-
 
         return response
 
@@ -122,6 +117,9 @@ class Synthesizer:
         Returns:
             str: A JSON string representation of the selected columns.
         """
+        if context.empty:
+            logger.warning("The context DataFrame is empty.")
+            return "[]"
         return context[columns_to_keep].to_json(orient="records", indent=2)
 
 
