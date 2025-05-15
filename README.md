@@ -10,7 +10,7 @@
         - other files
     - .env
 6. cd into X-Datasense folder in your terminal
-7. Do ```pip install requirements.txt``` to install the necessary packages
+7. Do ```pip install -r requirements.txt``` to install the necessary packages
 8. Run the file locally by running ```uvicorn main:app --reload```
 
 
@@ -60,7 +60,7 @@ These are variables you can control. If the variable includes a default value, y
 - DB_STAGING_BUCKET="gs://datasense_alloydb_vectorstore"
 - DB_CLUSTER="datasense"
 - DB_INSTANCE="datasense-primary"
-- DB_DATABASE="datasensedb"
+- DB_DATABASE="postgres"
 - DB_TABLE_NAME="partnertable"
 - DB_PASSWORD="5kL<?7{OXq]a"
 - DB_USER="postgres"

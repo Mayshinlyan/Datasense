@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import pandas as pd
 from database import VectorStore
 
@@ -7,7 +5,7 @@ from database import VectorStore
 vec = VectorStore()
 
 # Read the CSV file
-df = pd.read_csv("../data/out.csv", sep=",")
+df = pd.read_csv("./data/video_data.csv", sep=",")
 
 
 # optional method to see CSV file in df
@@ -26,13 +24,12 @@ def csv_to_df(row):
 
 records_df = df.apply(csv_to_df, axis=1)
 
-def insert_vectors():
 
-    # Create tables and insert data
-    # vec.create_table()
-    vec.upsert("../data/out.csv")
-    vec.create_index()  # IVFFlatIndex
 
-    vec.similarity_search("What is the best breed of dog to adopt?")
+# Create tables and insert data
+# vec.create_table()
+vec.upsert("./data/video_data.csv")
+vec.create_index()  # IVFFlatIndex
+vec.similarity_search("What is the best breed of dog to adopt?")
 
 

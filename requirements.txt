@@ -11,3 +11,4 @@ pip
 ipykernel
 pg8000
 pandas
+google-cloud-videointelligence

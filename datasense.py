@@ -12,7 +12,7 @@ def premium_applicable(history_obj: str) -> bool:
 
 
 
-def chat_response(history_obj: List[Dict], user_input: str) -> Dict:
+async def chat_response(history_obj: List[Dict], user_input: str) -> Dict:
     """
     Takes user input. Gets Gemini response.
     """
@@ -24,7 +24,7 @@ def chat_response(history_obj: List[Dict], user_input: str) -> Dict:
             content_history.append(Content(role='assistant', parts=[Part.from_text(text=item['content'])]))
 
 
-    content_history, model_response, video_file_link, enough_context = generate(content_history, user_input)
+    content_history, model_response, video_file_link, enough_context = await generate(content_history, user_input)
     print("Model response received.")
 
     if video_file_link!="N/A" and enough_context==True:

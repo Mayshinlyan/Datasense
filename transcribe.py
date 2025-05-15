@@ -1,12 +1,11 @@
 import os
 from google import genai
-from google.genai.types import GenerateContentConfig
 import vertexai
 import logging
-from pydantic import BaseModel, Field
 import pandas as pd
 import uuid
 from datetime import datetime
+import asyncio
 
 
 MODEL_ID = "gemini-2.0-flash-001"
@@ -48,9 +47,10 @@ def initialize_client():
 
 from google.cloud import videointelligence
 
-async def extractVideoTranscript(gcs_uri: str):
+def extractVideoTranscript(gcs_uri: str):
     """Transcribe speech from a video stored on GCS."""
-
+    logger.info(f"{gcs_uri} Video is being processed...")
+    start_time = datetime.now()
     video_client = videointelligence.VideoIntelligenceServiceClient()
     features = [videointelligence.Feature.SPEECH_TRANSCRIPTION]
 
@@ -59,9 +59,7 @@ async def extractVideoTranscript(gcs_uri: str):
     )
     video_context = videointelligence.VideoContext(speech_transcription_config=config)
 
-    logger.info("\nProcessing video.")
-
-    operation = await video_client.annotate_video(
+    operation = video_client.annotate_video(
         request={
             "features": features,
             "input_uri": gcs_uri,
@@ -72,12 +70,20 @@ async def extractVideoTranscript(gcs_uri: str):
     result = operation.result()
 
     annotation_results = result.annotation_results[0]
+    final_transcript = ""
+    for speech_transcription in annotation_results.speech_transcriptions:
+    # The number of alternatives for each transcription is limited by
+    # SpeechTranscriptionConfig.max_alternatives.
+    # Each alternative is a different possible transcription
+    # and has its own confidence score.
+        transcript = speech_transcription.alternatives[0].transcript
+        final_transcript += transcript
 
-    # logger.info(result)
+    end_time = datetime.now()
+    duration = end_time - start_time
+    logger.info(f"Video processing completed in: {duration}")
 
-    logger.info(annotation_results)
-
-    return annotation_results
+    return final_transcript
 
 # compile the videos data into one data file
 def insert_transcript_to_csv(videoFilePath: str, transcript: str, partner: str):
@@ -101,10 +107,10 @@ def insert_transcript_to_csv(videoFilePath: str, transcript: str, partner: str):
     # Convert the record to a DataFrame
     df = pd.DataFrame([record])
 
-    if os.path.exists("../data/out.csv"):
-        df.to_csv("../data/out.csv", mode='a', header=False, index=False)
+    if os.path.exists("./data/video_data.csv"):
+        df.to_csv("./data/video_data.csv", mode='a', header=False, index=False)
     else:
-        df.to_csv("../data/out.csv", mode='w', header=True, index=False)
+        df.to_csv("./data/video_data.csv", mode='w', header=True, index=False)
 
     logger.info(f"Inserted {videoFilePath} to CSV")
 
@@ -116,7 +122,7 @@ def main():
     client = initialize_client()
 
     # Example file path and transcript - innovation video
-    transcript = extractVideoTranscript("gs://maylyan-rag-test/HFIN_2621_BCS_R.mp4")
+    transcript = extractVideoTranscript("gs://maylyan-rag/HFIN_2621_BCS_R.mp4")
     partner = "Hearst Television"
     videofilepath = "https://storage.mtls.cloud.google.com/maylyan-rag-test/HFIN_2621_BCS_R.mp4"
 
@@ -126,9 +132,9 @@ def main():
 
 
     # Example file path and transcript - dog
-    transcript = extractVideoTranscript("gs://maylyan-rag-test/LDOG_3387_BCS.mp4")
+    transcript = extractVideoTranscript("gs://maylyan-rag/LDOG_3387_BCS.mp4")
     partner = "Hearst Television"
-    videofilepath = "https://storage.mtls.cloud.google.com/maylyan-rag-test/LDOG_3387_BCS.mp4"
+    videofilepath = "https://storage.mtls.cloud.google.com/maylyan-rag/LDOG_3387_BCS.mp4"
 
     # Prepare the record
     insert_transcript_to_csv(videofilepath, transcript, partner)

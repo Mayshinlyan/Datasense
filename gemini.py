@@ -23,10 +23,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def generate(chat_history: List[Content], user_turn: Union[Content,str]) -> Tuple[List[Content], Content]:
+async def generate(chat_history: List[Content], user_turn: Union[Content,str]) -> Tuple[List[Content], Content]:
     """
     Call the model, handles both Content and Str type inputs.
     """
+
+    logger.info("Gemini.py: Generating response from Gemini model.")
 
     if isinstance(user_turn, str):
         user_turn_content = Content(
@@ -83,10 +85,13 @@ def generate(chat_history: List[Content], user_turn: Union[Content,str]) -> Tupl
     #     contents = chat_history,
     #     config = generate_content_config,
     # )
+    logger.info("Gemini.py: Starting vector store")
     vec = VectorStore()
-    results = vec.similarity_search(user_turn)
+    logger.info("Gemini.py: Vector store initialized")
+    results = await vec.similarity_search(user_turn)
     response = Synthesizer.generate_response(question=user_turn, context=results)
     result = response.parsed
+    logger.info(f"Gemini.py: Gemini response {result}.")
 
     bot_answer = result.answer
     video_file_link = result.file_link

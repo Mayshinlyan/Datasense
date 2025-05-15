@@ -30,16 +30,8 @@ class SynthesizedResponse(BaseModel):
         description="Whether the assistant has enough context to answer the question"
     )
 
-
-from database import VectorStore
-
 class Synthesizer:
 
-    # Initialize VectorStore
-    vec = VectorStore()
-
-    def __init__(self):
-        self.vec = VectorStore()
 
     @staticmethod
     def generate_response(question: str, context: pd.DataFrame) -> SynthesizedResponse:
