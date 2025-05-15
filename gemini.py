@@ -23,7 +23,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-async def generate(chat_history: List[Content], user_turn: Union[Content,str]) -> Tuple[List[Content], Content]:
+def generate(chat_history: List[Content], user_turn: Union[Content,str], vec: VectorStore) -> Tuple[List[Content], Content]:
     """
     Call the model, handles both Content and Str type inputs.
     """
@@ -85,10 +85,12 @@ async def generate(chat_history: List[Content], user_turn: Union[Content,str]) -
     #     contents = chat_history,
     #     config = generate_content_config,
     # )
-    logger.info("Gemini.py: Starting vector store")
-    vec = VectorStore()
-    logger.info("Gemini.py: Vector store initialized")
-    results = await vec.similarity_search(user_turn)
+    logger.info("Generating response...")
+    if vec is None:
+        raise ValueError("Vector store should not be None.")
+    logger.info("starting similarity search...")
+    results = vec.similarity_search(user_turn)
+    logger.info("Generating response from Synthesizer...")
     response = Synthesizer.generate_response(question=user_turn, context=results)
     result = response.parsed
     logger.info(f"Gemini.py: Gemini response {result}.")

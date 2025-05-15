@@ -6,6 +6,7 @@ import pandas as pd
 import uuid
 from datetime import datetime
 import asyncio
+from config import DatabaseSettings
 
 
 MODEL_ID = "gemini-2.0-flash-001"
@@ -25,9 +26,9 @@ def initialize_client():
 
     logger.info(f"Initalizing GenAI client")
 
-    # PROJECT_ID = str(os.environ.get("GOOGLE_CLOUD_PROJECT", "lamb-puppy-215354"))
-    PROJECT_ID = str(os.environ.get("GOOGLE_CLOUD_PROJECT", "maylyan-test"))
-    LOCATION = os.environ.get("GOOGLE_CLOUD_REGION", "us-central1")
+    db_settings = DatabaseSettings()
+    PROJECT_ID = db_settings.db_project
+    LOCATION = DatabaseSettings().db_location
 
     vertexai.init(project=PROJECT_ID, location=LOCATION)
     client = genai.Client(vertexai=True, project=PROJECT_ID, location=LOCATION)

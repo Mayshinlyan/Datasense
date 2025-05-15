@@ -1,4 +1,4 @@
-# Steps to run the app locally:
+# Steps to setup the app locally/withon cloudtop:
 
 1. Pull the ‘maylyan-dev’ branch from the github repository
 2. Open the repo in your local code editor eg: VS Code
@@ -10,8 +10,27 @@
         - other files
     - .env
 6. cd into X-Datasense folder in your terminal
-7. Do ```pip install -r requirements.txt``` to install the necessary packages
-8. Run the file locally by running ```uvicorn main:app --reload```
+7. Do ```pip install requirements.txt``` to install the necessary packages
+    If you use venv run this: pip install -r requirements.txt
+
+8. Setup AlloyDb proxy or cloud-sql-proxy:
+You will need to enable cloud-sql-proxy proxy if you are working from a cloudtop:
+ssh into cloudtop and open terminal:
+    curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-proxy/v2.8.2/cloud-sql-proxy.linux.amd64 # Or the latest version from the docs
+
+then try running this command in a separate terminal window:
+./cloud-sql-proxy lamb-puppy-215354:us-central1:datasense --port 5433
+
+# Steps to run the app:
+
+1. Log into the cloudtop and start allowDB proxy within a terminal:
+        ./cloud-sql-proxy lamb-puppy-215354:us-central1:datasense --port 5433
+
+2. Launch the app by running ```uvicorn main:app --reload```
+
+3. If you run the app from the cloudtop, you might need to pen browser withon the cloudtop and use this http://127.0.0.1:8000/ to see the app
+
+3. In the end, kill the app and kill the proxy by running this within the terminal window (in your cloudtop): Ctrl+C
 
 
 # RAG Architecture Explanation

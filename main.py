@@ -7,7 +7,36 @@ import datasense as ds
 from config import get_settings
 from datasense_types import UserMessage
 
+from database import VectorStore # Assuming VectorStore class is in database.py
+import asyncio # You might need this if your setup logic uses async features directly,
+               # but @app.on_event("startup") handles the async context
+
 app = FastAPI()
+
+@app.on_event("startup")
+async def startup_db_client():
+    print("Running application startup tasks...")
+    try:
+        # This is the logic that was in your database.py's async def main()
+        vec = VectorStore()
+        app.state.vector_store = vec
+        print("vector store initialized and stored in app.state.vector_store.")
+
+    except Exception as e:
+        print(f"Error during startup database initialization: {e}")
+        # Depending on how critical this is, you might want to exit
+        # import os
+        # os._exit(1) # Force exit if DB is essential
+
+# --- You might want a shutdown event to close connections cleanly ---
+# @app.on_event("shutdown")
+# async def shutdown_db_client():
+#     if hasattr(app.state, 'db') and app.state.db:
+#         print("Closing database connection...")
+#         # Assuming your db object has a close method or similar
+#         # await app.state.db.close() # Example: Adjust based on your db library
+#         print("Database connection closed.")
+
 
 # Static
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -36,7 +65,7 @@ async def post_chat(user_message: UserMessage):
     Validates if premium dataset applies to response, sets premium flag if so.
     """
     try:
-        response = await ds.chat_response(user_message.chatHistory, user_message.message)
+        response = ds.chat_response(user_message.chatHistory, user_message.message, app.state.vector_store)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

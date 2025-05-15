@@ -5,6 +5,7 @@ uvicorn==0.34.0
 langchain-google-alloydb-pg>=0.7.0
 google-genai==1.9.0
 google-cloud-aiplatform[agent_engines,langchain]
+google-cloud-videointelligence
 langchain-google-vertexai
 langchain-community
 pip
