@@ -54,7 +54,7 @@ class DatabaseSettings(BaseModel):
     db_location: str = _get_config_variable("GCP_LOCATION", "us-central1")
     cluster: str = _get_config_variable("DB_CLUSTER", 'datasense')
     instance: str = _get_config_variable("DB_INSTANCE", 'datasense-primary')
-    database: str = _get_config_variable("DB_DATABASE", 'datasensedb')
+    database: str = _get_config_variable("DB_DATABASE", 'postgres')
     table: str = _get_config_variable("YDB_TABLE_NAME", 'partnertable')
     dbuser: str = _get_config_variable("DB_USER", 'postgres')
     dbpassword: str = _get_config_variable("DB_PASSWORD", '5kL<?7{OXq]a')
