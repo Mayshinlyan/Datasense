@@ -124,8 +124,13 @@ class VectorStore:
         Returns:
         List[Document]: A list of Documents
         """
-        docs = self.vector_store.similarity_search(query, k=5)
+        try:
+            docs = self.vector_store.similarity_search(query, k=5)
+            logger.info(f"Found similar documents {docs}")
+        except Exception as e:
+            logger.error(f"Error during similarity search: {e}")
 
+        logger.info(docs)
         # retriever = self.vector_store.as_retriever(search_type="similarity_score_threshold",
         # search_kwargs={'score_threshold': 0.5})
         print("Querying the vector store...")
