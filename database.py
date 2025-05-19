@@ -8,7 +8,6 @@ import pandas as pd
 import logging
 from langchain_google_alloydb_pg.indexes import IVFFlatIndex
 from typing import Any, List, Optional, Tuple, Union
-from google.cloud.alloydb.connector import Connector, IPTypes
 from sqlalchemy import text, inspect
 
 def setup_logging():
@@ -30,8 +29,11 @@ class VectorStore:
     def __init__(self):
         """Initialize the VectorStore with settings, AlloyDB Vector client."""
         self.settings = get_settings().database
+
         self.engine = self.create_db()
-        self.create_table() # Create the table if it doesn't exist
+
+        # uncomment this if you are creating table for the first time.
+        # self.create_table()
 
         embedding_service=VertexAIEmbeddings(
             model_name=self.settings.embedding_model, project=self.settings.db_project

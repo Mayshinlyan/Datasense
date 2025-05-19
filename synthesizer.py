@@ -55,7 +55,7 @@ class Synthesizer:
 
             # Guidelines:
 
-            1. Provide a clear and concise answer to the question.
+            1. Output the summary of the answer in 2 sentences.
             2. Use only the information from the relevant context to support your answer.
             3. The context is retrieved based on cosine similarity, so some information might be missing or irrelevant.
             4. If there is a file link in the context, include reference to the file link.
