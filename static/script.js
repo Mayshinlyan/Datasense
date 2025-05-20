@@ -1,134 +1,13 @@
-const conversationFlow = {
-    initialMessages: [
-        // First exchange
-        {
-            role: 'user',
-            content: 'How can I get a free business class upgrade on my next flight?'
-        },
-        {
-            role: 'assistant',
-            content: `Getting a free business class upgrade is a coveted travel perk, but it's important to understand that it's not guaranteed. However, there are strategies that can increase your chances. Here's a breakdown of key approaches:
-
-1. Airline Loyalty and Status:
-• Frequent Flyer Programs:
-  - Joining an airline's frequent flyer program is the most fundamental step. Accumulating miles and achieving elite status can unlock upgrade opportunities.
-• Airlines prioritize upgrades for their most loyal customers.
-• Airline Credit Cards:
-  - Many airline-branded credit cards offer benefits like priority boarding and potential upgrade consideration.
-
-2. Strategic Booking and Timing:
-• Travel During Off-Peak Times:
-  - Flying during midweek or less popular travel times can increase the availability of business class seats.`
-        },
-        // Second exchange (with upgrade prompt)
-        {
-            role: 'user',
-            content: 'What are the best times to try for an upgrade?'
-        },
-        {
-            role: 'assistant',
-            content: `Based on general travel patterns, here are the most opportune times to seek upgrades:
-
-1. Mid-week flights (Tuesday and Wednesday)
-2. Early morning or late evening departures
-3. Holiday off-seasons
-4. Business routes during weekends
-5. Leisure routes during weekdays
-
-Would you like to access premium data insights from our airline partners about specific success rates and optimal timing?`,
-            shouldShowUpgrade: true
-        }
-    ],
-
-    basicResponse: {
-        role: 'assistant',
-        content: `Here are some general tips for getting business class upgrades:
-
-1. Join airline loyalty programs and earn status
-2. Book flexible economy fares
-3. Check for last-minute upgrade offers
-4. Travel during off-peak times
-5. Consider using miles or points
-
-Keep in mind that upgrades are never guaranteed and depend on many factors including availability and your status level.`
-    },
-
-    premiumMessages: [
-        {
-            role: 'assistant',
-            content: `<div class="premium-chip"><span class="material-icons">verified</span>DataSense Premium Insight</div>
-
-Based on aggregated data from our airline partners:
-
-• American Airlines: 72% of successful upgrades occur between 72-96 hours before departure
-• Qantas: Highest upgrade success rate is 4.3x greater on Tuesday/Wednesday flights
-• Delta: Premium members have 68% better chances when booking red-eye flights
-
-Key timing strategies:
-1. Monitor load factors using ExpertFlyer 72 hours before departure
-2. Set alerts for business class seat availability changes
-3. Check upgrade windows specific to your status level
-4. Book flights with historically low business class occupancy
-
-Partner-verified upgrade hacks:
-1. Book "Y" or "B" fare classes for priority upgrade lists
-2. Use airline partner status matches strategically
-3. Consider split-cabin booking on longer routes
-4. Target newly launched routes for better upgrade chances
-
-Would you like specific details about any of these strategies?
-
-<div class="sources-section">
-    <div class="sources-title">
-        <span>Data Provided by Premium Data Partners</span>
-        <span class="material-icons">expand_more</span>
-    </div>
-    <div class="sources-grid">
-        <div class="source-card">
-            <div class="source-icon-container">
-                <img src="static/images/aa.png" alt="American Airlines" class="source-icon">
-            </div>
-            <div class="source-content">
-                <div class="source-title">How to get a flight upgrade and snag those business class perks - American Airlines</div>
-                <div class="source-url">www.aa.com</div>
-            </div>
-            <span class="material-icons source-menu">more_vert</span>
-        </div>
-        <div class="source-card">
-            <div class="source-icon-container">
-                <img src="static/images/qantas.svg" alt="Qantas" class="source-icon">
-            </div>
-            <div class="source-content">
-                <div class="source-title">What is priority boarding? - Qantas Airways</div>
-                <div class="source-url">www.qantas.com</div>
-            </div>
-            <span class="material-icons source-menu">more_vert</span>
-        </div>
-        <div class="source-card">
-            <div class="source-icon-container">
-                <img src="static/images/delta.jpg" alt="Delta" class="source-icon">
-            </div>
-            <div class="source-content">
-                <div class="source-title">Claim Compensation for Overbooked Flights - Delta</div>
-                <div class="source-url">www.delta.com</div>
-            </div>
-            <span class="material-icons source-menu">more_vert</span>
-        </div>
-    </div>
-</div>`
-        }
-    ]
-};
-
 class ChatInterface {
     constructor() {
         this.chatHistory = []; // ampma: Initialize chatHistory
         this.isPremium = false;
         this.isTyping = false;
+        this.isPaid = false;
+        this.premiumMessage = '';
+        this.fileLinks = [];
+        this.fileNames = [];
         this.initializeEventListeners();
-        // Start the demo after a short delay
-        // ampma:
-        // setTimeout(() => this.startDemo(), 500);
     }
 
     initializeEventListeners() {
@@ -169,69 +48,6 @@ class ChatInterface {
         });
     }
 
-    async startDemo() {
-        let skipTyping = false;
-
-        // Add event listener for Enter key
-        const skipHandler = (e) => {
-            if (e.key === 'Enter') {
-                skipTyping = true;
-            }
-        };
-        document.addEventListener('keydown', skipHandler);
-
-        // Wait for initial load
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Clear welcome message
-        const welcomeContainer = document.querySelector('.welcome-container');
-        welcomeContainer.classList.add('fade-out');
-        await new Promise(resolve => setTimeout(resolve, 500));
-        welcomeContainer.remove();
-
-        // First exchange
-        const inputElement = document.getElementById('userInput');
-        const firstQuestion = conversationFlow.initialMessages[0].content;
-
-        if (!skipTyping) {
-            for (let i = 0; i < firstQuestion.length; i++) {
-                if (skipTyping) break;
-                inputElement.value += firstQuestion[i];
-                await new Promise(resolve => setTimeout(resolve, 20));
-            }
-        }
-
-        inputElement.value = firstQuestion;
-        await new Promise(resolve => setTimeout(resolve, 300));
-        inputElement.value = '';
-        await this.addMessage('user', firstQuestion);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        await this.addMessage('assistant', conversationFlow.initialMessages[1].content);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // Second exchange
-        const secondQuestion = conversationFlow.initialMessages[2].content;
-
-        if (!skipTyping) {
-            for (let i = 0; i < secondQuestion.length; i++) {
-                if (skipTyping) break;
-                inputElement.value += secondQuestion[i];
-                await new Promise(resolve => setTimeout(resolve, 20));
-            }
-        }
-
-        inputElement.value = secondQuestion;
-        await new Promise(resolve => setTimeout(resolve, 300));
-        inputElement.value = '';
-        await this.addMessage('user', secondQuestion);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        await this.addMessage('assistant', conversationFlow.initialMessages[3].content);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // Clean up event listener
-        document.removeEventListener('keydown', skipHandler);
-    }
-
     async handleUserInput() {
         console.log("handleUserInput called");
         const inputElement = document.getElementById('userInput');
@@ -250,20 +66,6 @@ class ChatInterface {
 
         inputElement.value = '';
         await this.addMessage('user', messageText);
-
-        /* ampma
-        // Get the next assistant message
-        const nextMessage = conversationFlow.initialMessages[this.currentMessageIndex + 1];
-        await this.addMessage('assistant', nextMessage.content);
-
-        this.currentMessageIndex += 2;
-
-        // Show upgrade modal after third exchange
-        if (nextMessage.shouldShowUpgrade) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            this.showUpgradeModal();
-        }
-        */
 
         // ampma: posting to /chat
         try {
@@ -286,8 +88,24 @@ class ChatInterface {
             const data = await response.json();
             console.log('Response from le /chat: ', data);
 
+
+            this.premiumMessage = data.premiumResponse.parts[0].text
+            this.isPremium = data.premiumFlag;
+
+            if (data.premiumFlag) (
+                this.fileLinks = data.videoFileLink,
+                this.fileNames = data.videoFileName
+            )
+
             // Handle response from the server
-            await this.addMessage('assistant', data.modelResponse.parts[0].text, data.premiumFlag, data.videoFileLink)
+            await this.addMessage('assistant', data.modelResponse.parts[0].text)
+
+
+            console.log('<HandleUserInput> Gemini Response: ',data.modelResponse.parts[0].text)
+            console.log('<HandleUserInput>: Premium Response: ',data.premiumResponse.parts[0].text)
+            console.log('<HandleUserInput> data.premiumFlag: ',data.premiumFlag)
+
+
 
             // Check if premium content should be shown
             //if (data.premiumFlag) {
@@ -302,12 +120,21 @@ class ChatInterface {
         }
     }
 
-    async addMessage(role, content, isPremium, videoFileLink) {
+    async addMessage(role, content) {
         const chatMessages = document.getElementById('chatMessages');
         const messageDiv = document.createElement('div');
 
         // ampma: Add message to chatHistory
-        this.chatHistory.push({role: role, content: content, isPremium: isPremium})
+        let isPremium = this.isPremium;
+        let isPaid = this.isPaid;
+        let fileLinks = this.fileLinks;
+        let fileNames = this.fileNames;
+        this.chatHistory.push({role: role, content: content, isPremium: isPremium});
+
+        console.log('<addMessage>: isPremium: ',isPremium)
+        console.log('<addMessage>: Premium Response: ', this.premiumMessage)
+        console.log('<addMessage>: fileLinks: ', fileLinks)
+        console.log('<addMessage>: videoFileName: ', fileNames)
 
         if (role === 'user') {
             messageDiv.className = 'user-message';
@@ -317,28 +144,37 @@ class ChatInterface {
             messageDiv.className = 'message ai-message';
             const formattedContent = content.replace(/\n/g, '<br>');
 
-            // display video link if available
+            // Need to loop through this
+            let videoChipComponent = ''
 
+            if (isPaid && isPremium) {
+                for (let i = 0; i < fileLinks.length; i++) {
+                    videoChipComponent += `<div class="premium-prompt-chip">
+                    <span class="material-icons">verified</span>
+                    <button class="chip-button"> <a class='video-link' href="${fileLinks[i]}" target="_blank">${fileNames[i]}</a></button>
+                    </div>`
 
-            const videoChip = isPremium ? ` <div class="premium-prompt-chip">
-            <span class="material-icons">verified</span>
-            <button class="try-now-button"> <a class='video-link' href="${videoFileLink}" target="_blank">Watch Video</a></button>
+                    console.log('in for loop for', fileLinks[i]);
+                    console.log(videoChipComponent);
+                    this.isPremium = false;
+                }
+            }
 
-            </div>` : '';
-            console.log('video chip', videoChip);
+            // const videoChipComponent = isPaid ? ` <div class="premium-prompt-chip">
+            // <span class="material-icons">verified</span>
+            // <button class="try-now-button"> <a class='video-link' href="${this.videoFileLink[0]}" target="_blank">Watch Video</a></button>
 
+            // </div>` : '';
+            console.log('video chip', videoChipComponent);
 
-            // ampma: Override below - we'll add premium chip IF premiumFlag is set.
-            // Add premium chip if this is the second answer
-            //const isPremiumPrompt = content === conversationFlow.initialMessages[3].content;
             const isPremiumPrompt = false;
-            const premiumChip = isPremiumPrompt ? `
-                    <div class="premium-prompt-chip">
-                        <span class="material-icons">verified</span>
-                        Get Premium Answer with DataSense Partner Data
-                        <button class="try-now-button">Try now</button>
-                    </div>
-                ` : '';
+            const premiumChip = (isPremium && !isPaid) ? `
+                <div class="premium-prompt-chip">
+                    <span class="material-icons">verified</span>
+                    Get Premium Answer with DataSense Partner Data
+                    <button class="try-now-button chip-button">Try now</button>
+                </div>
+            ` : '';
 
 
             messageDiv.innerHTML = `
@@ -347,7 +183,9 @@ class ChatInterface {
                 </div>
                 <div class="message-content">
                     <div style="white-space: pre-line">${formattedContent}</div>
-                    ${videoChip}
+                    ${premiumChip}
+
+                    <div class="videoChipComponent">${videoChipComponent}<div>
                     <div class="message-actions">
                         <button title="Like">
                             <span class="material-icons">thumb_up</span>
@@ -375,6 +213,9 @@ class ChatInterface {
         }
 
         smoothScrollTo(chatMessages, chatMessages.scrollHeight);
+
+
+
     }
 
     async showUpgradeModal() {
@@ -397,7 +238,7 @@ class ChatInterface {
                 <h2>Upgrade to DataSense</h2>
                 <p class="subtitle">Your inital answer was based on fair-use content and publicly available data.</p>
 
-                <p class="subtitle">DataSense answers leverage proprietary partner data / content. Enhance your answer with exclusive insights from <strong>American Airlines, Qantas</strong> and <strong>Delta</strong>.</p>
+                <p class="subtitle">DataSense answers leverage proprietary partner data / content. Enhance your answer with exclusive insights from our partners.
 
                 <div class="upgrade-options">
                     <button id="continue" class="option-button">
@@ -488,6 +329,7 @@ class ChatInterface {
 
         // Auto-close after 30 seconds if not skipped
         await new Promise(resolve => setTimeout(resolve, 30000));
+        this.isPaid = true;
         if (document.body.contains(adOverlay)) {
             adOverlay.remove();
             clearInterval(countdownInterval);
@@ -523,7 +365,7 @@ class ChatInterface {
                         </button>
                     </div>
                     <h2>Buy DataSense Credits</h2>
-                    <p>To continue browsing with data from <strong>American Airlines, Delta</strong> and <strong>Qantas</strong> buy premium data / content credits.</p>
+                    <p>To continue browsing with data from premium data buy <b>datasense credits<b>.</p>
                 </div>
                 <div class="credits-options">
                     <label class="credit-option">
@@ -602,8 +444,8 @@ class ChatInterface {
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
 
-            // Show premium content
-            this.isPremium = true;
+
+            this.isPaid = true;
             await this.showPremiumContent();
         };
 
@@ -635,8 +477,9 @@ class ChatInterface {
     }
 
     async showPremiumContent() {
-        const premiumMessage = conversationFlow.premiumMessages[0];
-        await this.addMessage('assistant', premiumMessage.content);
+        const premiumMessage = this.premiumMessage;
+        console.log('<showPremiumContent> premiumMessage', premiumMessage);
+        await this.addMessage('assistant', premiumMessage);
     }
 }
 

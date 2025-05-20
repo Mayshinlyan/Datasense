@@ -1,12 +1,8 @@
 import pandas as pd
 from database import VectorStore
+from config import setup_logging
 
-# Initialize VectorStore
-vec = VectorStore()
-
-# Read the CSV file
-df = pd.read_csv("./data/video_data.csv", sep=",")
-
+logger = setup_logging()
 
 # optional method to see CSV file in df
 def csv_to_df(row):
@@ -17,19 +13,38 @@ def csv_to_df(row):
             "id": row["id"],
             "partner": row["partner"],
             "created_at": row["created_at"],
+            "file_name": row["file_name"],
             "video_file_path": row["video_file_path"],
+            "gcs_uri": row["gcs_uri"],
             "transcript": row["transcript"],
         }
     )
 
-records_df = df.apply(csv_to_df, axis=1)
+async def insert_records_to_vector_store(vec, transcribed_csv_file: str):
+    """Insert records into the vector store from a CSV file.
+    """
+    # insert records from CSV file to vector store
+    vec.upsert(transcribed_csv_file)
+
+    # Reindex the vector store with new data
+    response = await vec.vector_store.areindex()
+
+    if response:
+        logger.info("Reindexing completed successfully.")
+
+
+async def main():
+    """Main function to insert records into the vector store.
+    """
+    # Initialize VectorStore
+    vec = VectorStore()
+
+    await insert_records_to_vector_store(vec, "./data/output_transcribed_videodata.csv")
+
+    vec.similarity_search("What is the best breed of dog to adopt?")
 
 
 
-# Create tables and insert data
-# vec.create_table()
-vec.upsert("./data/video_data.csv")
-vec.create_index()  # IVFFlatIndex
-vec.similarity_search("What is the best breed of dog to adopt?")
+
 
 

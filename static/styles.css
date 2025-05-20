@@ -744,6 +744,12 @@ body {
     animation: rotateVerified 0.5s ease-out;
 }
 
+.videoChipComponent{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 @keyframes rotateVerified {
     from { transform: rotate(-180deg); }
     to { transform: rotate(0); }
@@ -1208,7 +1214,7 @@ body {
     font-size: 16px;
 }
 
-.try-now-button {
+.chip-button {
     background: #4285F4;
     color: white;
     border: none;
