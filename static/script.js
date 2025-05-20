@@ -5,8 +5,8 @@ class ChatInterface {
         this.isTyping = false;
         this.isPaid = false;
         this.premiumMessage = '';
-        this.videoFileLink = [];
-        this.videoFileNames = [];
+        this.fileLinks = [];
+        this.fileNames = [];
         this.initializeEventListeners();
     }
 
@@ -93,8 +93,8 @@ class ChatInterface {
             this.isPremium = data.premiumFlag;
 
             if (data.premiumFlag) (
-                this.videoFileLink = data.videoFileLink,
-                this.videoFileNames = data.videoFileName
+                this.fileLinks = data.videoFileLink,
+                this.fileNames = data.videoFileName
             )
 
             // Handle response from the server
@@ -125,16 +125,16 @@ class ChatInterface {
         const messageDiv = document.createElement('div');
 
         // ampma: Add message to chatHistory
-        this.chatHistory.push({role: role, content: content})
-        const isPremium = this.isPremium;
-        const isPaid = this.isPaid;
-        const videoFileLink = this.videoFileLink;
-        const videoFileNames = this.videoFileNames;
+        let isPremium = this.isPremium;
+        let isPaid = this.isPaid;
+        let fileLinks = this.fileLinks;
+        let fileNames = this.fileNames;
+        this.chatHistory.push({role: role, content: content, isPremium: isPremium});
 
         console.log('<addMessage>: isPremium: ',isPremium)
         console.log('<addMessage>: Premium Response: ', this.premiumMessage)
-        console.log('<addMessage>: videoFileLink: ', videoFileLink)
-        console.log('<addMessage>: videoFileName: ', videoFileNames)
+        console.log('<addMessage>: fileLinks: ', fileLinks)
+        console.log('<addMessage>: videoFileName: ', fileNames)
 
         if (role === 'user') {
             messageDiv.className = 'user-message';
@@ -147,15 +147,16 @@ class ChatInterface {
             // Need to loop through this
             let videoChipComponent = ''
 
-            if (isPaid) {
-                for (let i = 0; i < videoFileLink.length; i++) {
+            if (isPaid && isPremium) {
+                for (let i = 0; i < fileLinks.length; i++) {
                     videoChipComponent += `<div class="premium-prompt-chip">
                     <span class="material-icons">verified</span>
-                    <button class="chip-button"> <a class='video-link' href="${videoFileLink[i]}" target="_blank">${videoFileNames[i]}</a></button>
+                    <button class="chip-button"> <a class='video-link' href="${fileLinks[i]}" target="_blank">${fileNames[i]}</a></button>
                     </div>`
 
-                    console.log('in for loop for', videoFileLink[i]);
+                    console.log('in for loop for', fileLinks[i]);
                     console.log(videoChipComponent);
+                    this.isPremium = false;
                 }
             }
 
@@ -212,6 +213,8 @@ class ChatInterface {
         }
 
         smoothScrollTo(chatMessages, chatMessages.scrollHeight);
+
+
 
     }
 
