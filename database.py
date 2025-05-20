@@ -2,25 +2,15 @@ from langchain_community.document_loaders.csv_loader import CSVLoader
 from langchain_core.documents import Document
 from langchain_google_alloydb_pg import AlloyDBEngine, AlloyDBVectorStore
 from langchain_google_vertexai import VertexAIEmbeddings
-from config import get_settings
 import pandas as pd
-
-import logging
 from langchain_google_alloydb_pg.indexes import IVFFlatIndex
-from typing import Any, List, Optional, Tuple, Union
+
+from typing import Any, List, Tuple
 from sqlalchemy import text, inspect
 
-def setup_logging():
-    """Configure basic logging for the application."""
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-    )
-    logger = logging.getLogger(__name__)
-
-    return logger
+from config import setup_logging, get_settings
 
 logger = setup_logging()
-
 
 
 class VectorStore:
@@ -78,6 +68,8 @@ class VectorStore:
             )
             logger.info(f"Successfully initialized vectorstore table '{self.settings.table}'.")
 
+            self.create_index(self)  # IVFFlatIndex
+
             return True  # Indicate success
         except Exception as e:
             logger.error(f"Error creating AlloyDBEngine or initializing table: {e}")
@@ -85,7 +77,9 @@ class VectorStore:
             return False
 
     def create_index(self) -> None:
-        """Create the StreamingDiskANN index to spseed up similarity search"""
+        """Create the IVFFlatIndex to speed up similarity search"""
+        logger.info(f"Creating index for table {self.settings.table}...")
+
         index = IVFFlatIndex()
         self.vector_store.apply_vector_index(index)
         logger.info(f"Successfully created index '{index}' for table '{self.settings.table}'.")
@@ -97,13 +91,17 @@ class VectorStore:
         Args:
             csv_file: Path to the CSV file containing the data to be inserted.
         """
+        logger.info(f"Inserting records from CSV file to Alloydb Vector Store")
 
         # Step 2: load the CSV
         metadata = [
             'id',
             'partner',
+            'file_name',
             'created_at',
-            "video_file_path",
+            'video_file_path',
+            'gcs_uri',
+
         ]
         loader = CSVLoader(file_path=csv_file, metadata_columns=metadata)
         docs = loader.load()
@@ -113,7 +111,7 @@ class VectorStore:
 
 
         self.vector_store.add_documents(docs, ids=ids)
-        logging.info(
+        logger.info(
             f"Inserted records into {self.settings.table}"
         )
 
@@ -127,19 +125,14 @@ class VectorStore:
         List[Document]: A list of Documents
         """
         try:
-            docs = self.vector_store.similarity_search(query, k=5)
-            logger.info(f"Found similar documents {docs}")
+            docs = self.vector_store.similarity_search(query, k=3)
+            # logger.info(f"Found similar documents {docs}")
         except Exception as e:
             logger.error(f"Error during similarity search: {e}")
 
-        logger.info(docs)
-        # retriever = self.vector_store.as_retriever(search_type="similarity_score_threshold",
-        # search_kwargs={'score_threshold': 0.5})
-        print("Querying the vector store...")
-
         df = self._create_dataframe_from_results(docs)
 
-        print(df)
+        logger.info(f"similary_search outputs: {df}")
 
         return df
 
@@ -163,6 +156,7 @@ class VectorStore:
                 'partner': doc.metadata.get('partner'),
                 'created_at': doc.metadata.get('created_at'),
                 'video_file_path': doc.metadata.get('video_file_path'),
+                'file_name': doc.metadata.get('file_name'),
                 'page_content': doc.page_content,
             })
         df = pd.DataFrame(data)

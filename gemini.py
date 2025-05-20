@@ -80,7 +80,7 @@ def generate(chat_history: List[Content], user_turn: Union[Content,str], vec: Ve
     bot_answer = result.answer
     premium_applicable = result.premium_applicable
 
-    logger.info(f"Gemini.py: Gemini response received. {bot_answer} ,{premium_applicable}")
+    logger.info(f"Gemini.py: Normal Gemini response received. {bot_answer} ,{premium_applicable}")
     # ==== END: Normal Gemini Response without RAG ==== #
 
     # ==== START: Trigger this when the response is premium worthy ==== #
@@ -98,13 +98,15 @@ def generate(chat_history: List[Content], user_turn: Union[Content,str], vec: Ve
 
         premium_bot_answer = result.answer
         video_file_link = result.file_link
+        video_file_name = result.file_name
 
         # enough_context = result.enough_context
 
-        logger.info(f"Model response received as: {bot_answer} with video link: {video_file_link}")
+        logger.info(f"Gemini.py: Premium model response received as: {premium_bot_answer} with video link: {video_file_link} and file names: {video_file_name}")
     else:
         premium_bot_answer = "N/A"
         video_file_link = "N/A"
+        video_file_name = "N/A"
 
     gemini_response_content = Content(
         role="assistant",
@@ -123,5 +125,5 @@ def generate(chat_history: List[Content], user_turn: Union[Content,str], vec: Ve
 
 
 
-    return (chat_history, gemini_response_content, video_file_link, premium_response_content)
+    return (chat_history, gemini_response_content, video_file_link, video_file_name, premium_response_content)
 

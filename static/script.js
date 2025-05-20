@@ -5,7 +5,8 @@ class ChatInterface {
         this.isTyping = false;
         this.isPaid = false;
         this.premiumMessage = '';
-        this.videoFileLink= [];
+        this.videoFileLink = [];
+        this.videoFileNames = [];
         this.initializeEventListeners();
     }
 
@@ -92,7 +93,8 @@ class ChatInterface {
             this.isPremium = data.premiumFlag;
 
             if (data.premiumFlag) (
-                this.videoFileLink.push(data.videoFileLink)
+                this.videoFileLink = data.videoFileLink,
+                this.videoFileNames = data.videoFileName
             )
 
             // Handle response from the server
@@ -127,10 +129,12 @@ class ChatInterface {
         const isPremium = this.isPremium;
         const isPaid = this.isPaid;
         const videoFileLink = this.videoFileLink;
+        const videoFileNames = this.videoFileNames;
 
         console.log('<addMessage>: isPremium: ',isPremium)
         console.log('<addMessage>: Premium Response: ', this.premiumMessage)
         console.log('<addMessage>: videoFileLink: ', videoFileLink)
+        console.log('<addMessage>: videoFileName: ', videoFileNames)
 
         if (role === 'user') {
             messageDiv.className = 'user-message';
@@ -141,19 +145,33 @@ class ChatInterface {
             const formattedContent = content.replace(/\n/g, '<br>');
 
             // Need to loop through this
-            const videoChip = isPaid ? ` <div class="premium-prompt-chip">
-            <span class="material-icons">verified</span>
-            <button class="try-now-button"> <a class='video-link' href="${this.videoFileLink[0]}" target="_blank">Watch Video</a></button>
+            let videoChipComponent = ''
 
-            </div>` : '';
-            console.log('video chip', videoChip);
+            if (isPaid) {
+                for (let i = 0; i < videoFileLink.length; i++) {
+                    videoChipComponent += `<div class="premium-prompt-chip">
+                    <span class="material-icons">verified</span>
+                    <button class="chip-button"> <a class='video-link' href="${videoFileLink[i]}" target="_blank">${videoFileNames[i]}</a></button>
+                    </div>`
+
+                    console.log('in for loop for', videoFileLink[i]);
+                    console.log(videoChipComponent);
+                }
+            }
+
+            // const videoChipComponent = isPaid ? ` <div class="premium-prompt-chip">
+            // <span class="material-icons">verified</span>
+            // <button class="try-now-button"> <a class='video-link' href="${this.videoFileLink[0]}" target="_blank">Watch Video</a></button>
+
+            // </div>` : '';
+            console.log('video chip', videoChipComponent);
 
             const isPremiumPrompt = false;
             const premiumChip = (isPremium && !isPaid) ? `
                 <div class="premium-prompt-chip">
                     <span class="material-icons">verified</span>
                     Get Premium Answer with DataSense Partner Data
-                    <button class="try-now-button">Try now</button>
+                    <button class="try-now-button chip-button">Try now</button>
                 </div>
             ` : '';
 
@@ -164,7 +182,9 @@ class ChatInterface {
                 </div>
                 <div class="message-content">
                     <div style="white-space: pre-line">${formattedContent}</div>
-                    ${premiumChip} ${videoChip}
+                    ${premiumChip}
+
+                    <div class="videoChipComponent">${videoChipComponent}<div>
                     <div class="message-actions">
                         <button title="Like">
                             <span class="material-icons">thumb_up</span>
@@ -192,6 +212,7 @@ class ChatInterface {
         }
 
         smoothScrollTo(chatMessages, chatMessages.scrollHeight);
+
     }
 
     async showUpgradeModal() {

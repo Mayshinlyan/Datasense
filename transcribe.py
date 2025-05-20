@@ -51,6 +51,7 @@ from google.cloud import videointelligence
 def extractVideoTranscript(gcs_uri: str):
     """Transcribe speech from a video stored on GCS."""
     logger.info(f"{gcs_uri} Video is being processed...")
+
     start_time = datetime.now()
     video_client = videointelligence.VideoIntelligenceServiceClient()
     features = [videointelligence.Feature.SPEECH_TRANSCRIPTION]
@@ -63,7 +64,7 @@ def extractVideoTranscript(gcs_uri: str):
     operation = video_client.annotate_video(
         request={
             "features": features,
-            "input_uri": gcs_uri,
+            "input_uri": f"{gcs_uri}",
             "video_context": video_context,
         }
     )
@@ -73,10 +74,6 @@ def extractVideoTranscript(gcs_uri: str):
     annotation_results = result.annotation_results[0]
     final_transcript = ""
     for speech_transcription in annotation_results.speech_transcriptions:
-    # The number of alternatives for each transcription is limited by
-    # SpeechTranscriptionConfig.max_alternatives.
-    # Each alternative is a different possible transcription
-    # and has its own confidence score.
         transcript = speech_transcription.alternatives[0].transcript
         final_transcript += transcript
 
@@ -86,57 +83,66 @@ def extractVideoTranscript(gcs_uri: str):
 
     return final_transcript
 
-# compile the videos data into one data file
-def insert_transcript_to_csv(videoFilePath: str, transcript: str, partner: str):
+def insert_transcript_to_csv(videoFileName:str, videoFilePath: str, GCSUri:str, transcript: str, partner: str):
     """Prepare a record for insertion into the vector store.
 
-    This function creates a record with a UUID version 1 as the ID, which captures
-    the current time or a specified time.
-
+    This function creates a record with a UUID version 1 as the ID, which captures the current time or a specified time.
     """
+    logger.info(f"Inserting transcript to csv for {videoFileName}")
 
     record = pd.Series(
         {
             "id": str(uuid.uuid1()),
-            "partner": partner,
+            "partner": str(partner),
             "created_at": datetime.now().isoformat(),
-            "video_file_path": videoFilePath,
-            "transcript": transcript
+            "file_name": str(videoFileName),
+            "video_file_path": str(videoFilePath),
+            "gcs_uri": str(GCSUri),
+            "transcript": str(transcript)
         }
     )
 
     # Convert the record to a DataFrame
     df = pd.DataFrame([record])
 
-    if os.path.exists("./data/video_data.csv"):
-        df.to_csv("./data/video_data.csv", mode='a', header=False, index=False)
+    if os.path.exists("./data/output_transcribed_videodata.csv"):
+        df.to_csv("./data/output_transcribed_videodata.csv", mode='a', header=False, index=False)
+        logger.info(f"Appended transcript for {videoFileName} into the CSV")
     else:
-        df.to_csv("./data/video_data.csv", mode='w', header=True, index=False)
-
-    logger.info(f"Inserted {videoFilePath} to CSV")
+        df.to_csv("./data/output_transcribed_videodata.csv", mode='w', header=True, index=False)
+        logger.info(f"Created new CSV and inserted transcript for {videoFileName}")
 
     return df
 
-def main():
-    """Main function to run the script."""
+def transcription_pipeline(input_csv_filepath: str):
+    """Main function to run the transcription pipeline. Input CSV file contains two columns: video_file_path and partner."""
+
     # Initialize the GenAI client
-    client = initialize_client()
+    initialize_client()
 
-    # Example file path and transcript - innovation video
-    transcript = extractVideoTranscript("gs://maylyan-rag/HFIN_2621_BCS_R.mp4")
-    partner = "Hearst Television"
-    videofilepath = "https://storage.mtls.cloud.google.com/maylyan-rag-test/HFIN_2621_BCS_R.mp4"
+    # Read and loop through each row in the CSV file
+    df = pd.read_csv(input_csv_filepath, sep=",")
 
-    # Prepare the record
-    insert_transcript_to_csv(videofilepath, transcript, partner)
+    for index, row in df.iterrows():
+        partner = row["partner"]
+        videoFileName = row["videoFileName"]
+        GCSUri = row["GCSUri"]
+        videoFilePath = row["videoFilePath"]
+
+        logger.info(f"Read CSV data for {partner},{videoFileName},{videoFilePath},{GCSUri}")
+
+        # Extract the transcript from the video file
+        transcript = extractVideoTranscript(GCSUri)
+
+        # Insert the transcript into the CSV file
+        insert_transcript_to_csv(videoFileName, videoFilePath, GCSUri, transcript, partner)
+
+    logger.info("All transcripts have been processed and inserted into the CSV file.")
 
 
+def main():
 
-    # Example file path and transcript - dog
-    transcript = extractVideoTranscript("gs://maylyan-rag/LDOG_3387_BCS.mp4")
-    partner = "Hearst Television"
-    videofilepath = "https://storage.mtls.cloud.google.com/maylyan-rag/LDOG_3387_BCS.mp4"
+    """Main function to run the script."""
+    transcription_pipeline("./data/input_file.csv")
 
-    # Prepare the record
-    insert_transcript_to_csv(videofilepath, transcript, partner)
 

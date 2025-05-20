@@ -20,10 +20,13 @@ class SynthesizedResponse(BaseModel):
     thought_process: List[str] = Field(
         description="List of thoughts that the AI assistant had while synthesizing the answer"
     )
-    file_link: str = Field(
-    description="Link to video file if applicable")
+    file_link: List[str] = Field(
+    description="A list of video file paths associated with the context")
     partner_name: str = Field(
         description="The name of the partner associated with the context"
+    )
+    file_name: List[str] = Field(
+        description="A list of file name associated with the context"
     )
     answer: str = Field(description="The synthesized answer to the user's question")
     enough_context: bool = Field(
@@ -45,8 +48,10 @@ class Synthesizer:
             A SynthesizedResponse containing thought process and answer.
         """
         context_str = Synthesizer.dataframe_to_json(
-            context, columns_to_keep=["video_file_path", "page_content", "partner"]
+            context, columns_to_keep=["video_file_path", "page_content", "partner", "file_name"]
         )
+
+        logger.info(f"Synthesizer.py: This is the context string {context_str}")
 
         SYSTEM_PROMPT = f"""
             # Role and Purpose
@@ -55,17 +60,12 @@ class Synthesizer:
 
             # Guidelines:
 
-            1. Output the summary of the answer in 2 sentences.
-            2. Use only the information from the relevant context to support your answer.
-            3. The context is retrieved based on cosine similarity, so some information might be missing or irrelevant.
-            4. If there is a file link in the context, include reference to the file link.
-            5. Do not use first person perspective.
-            6. Be transparent when there is insufficient information to fully answer the question.
-            7. Do not make up or infer information not present in the provided context.
-            8. Do not include the file link itself.
-            9. If you cannot answer the question based on the given context, say "I am sorry. I don't have enough information to answer that."
-            10. Maintain a helpful and professional tone appropriate for customer service.
-
+            1. Provide a clear and concise answer to the question based on the context.
+            2. The context is retrieved based on cosine similarity, so some information might be missing or irrelevant.
+            3. Do not use first person perspective.
+            4. Do not make up or infer information not present in the provided context.
+            5. Do not include the file link itself.
+            6. Maintain a helpful and professional tone appropriate for customer service.
 
             Here is the relevant context retrieved from the knowledge database:
             {context_str}
@@ -80,7 +80,7 @@ class Synthesizer:
             location=get_settings().llm.gcp_location,
         )
         generate_content_config = types.GenerateContentConfig(
-            temperature = 0.0,
+            temperature = 0.3,
             system_instruction=SYSTEM_PROMPT,
             response_mime_type="application/json",
             response_schema=SynthesizedResponse,
@@ -91,6 +91,8 @@ class Synthesizer:
             contents = question,
             config = generate_content_config,
         )
+
+        logger.info(f"Synthesizer.py: Synthesized response received. {response}")
 
         return response
 
