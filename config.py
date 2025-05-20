@@ -27,6 +27,10 @@ def _get_config_variable(variable_name: str, default_value: str) -> str:
             variable_value = default_value
         return variable_value
 
+class SearchEngineSettings(BaseModel):
+    project_number: str = _get_config_variable("GCP_PROJECT_NUMBER", "176935887576")
+    engine_id: str = _get_config_variable("VERTEXAI_SEARCH_ENGINE_ID", "datasense-test_1744153572996")
+    location: str = _get_config_variable("SEARCH_ENGINE_LOCATION", "global")
 
 class LLMSettings(BaseModel):
     """
@@ -68,7 +72,7 @@ class Settings(BaseModel):
 
     llm: LLMSettings = Field(default_factory=LLMSettings)
     database: DatabaseSettings = Field(default_factory=DatabaseSettings)
-
+    search_engine: SearchEngineSettings = Field(default_factory=SearchEngineSettings)
 
 @lru_cache
 def get_settings() -> Settings:
