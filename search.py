@@ -7,7 +7,7 @@ from search import search_sample
 from config import get_settings
 
 search_setting = get_settings().search_engine
-search_response = search_sample(
+documents = search_documents(
         project_id=search_setting.project_number,
         location=search_setting.location,
         engine_id=search_setting.engine_id,
@@ -19,13 +19,22 @@ search_response = search_sample(
 from google.api_core.client_options import ClientOptions
 from google.cloud import discoveryengine_v1 as discoveryengine
 import logging 
+from dataclasses import dataclass
+from typing import Dict, List, Union
+from google.protobuf.struct_pb2 import Struct, ListValue, Value
 
-def search_sample(
+@dataclass
+class Document:
+    title: str = ""
+    link: str  = ""
+    snippet: List[str] = None
+
+def search_documents(
     project_id: str,
     location: str,
     engine_id: str,
     search_query: str,
-) -> discoveryengine.services.search_service.pagers.SearchPager:
+) -> List[Document]:
     client_options = (
         ClientOptions(api_endpoint=f"{location}-discoveryengine.googleapis.com")
         if location != "global"
@@ -76,7 +85,19 @@ def search_sample(
     )
     page_result = client.search(request)
     # Handle the response
-    for response in page_result:
-        print(response)
+    document_list = []
+    for result in page_result:
+        derived_struct_data = result.document.derived_struct_data
+        derived_snippets = derived_struct_data.get("snippets", [])
+        snippet_list = []
+        for i, snippet_item_struct in enumerate(derived_snippets):
+            snippet_item = snippet_item_struct.get("snippet", "")
+            snippet_list.append(snippet_item)
+        document = Document(
+            title=derived_struct_data.get("title", ""),
+            snippet=snippet_list,
+            link=derived_struct_data.get("link", "")
+        )
+        document_list.append(document)
 
-    return page_result
+    return document_list

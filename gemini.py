@@ -12,6 +12,7 @@ from config import get_settings
 from database import VectorStore
 from synthesizer import Synthesizer
 from pydantic import BaseModel, Field
+from search import search_documents
 
 import logging
 
@@ -82,7 +83,15 @@ def generate(chat_history: List[Content], user_turn: Union[Content,str], vec: Ve
 
     logger.info(f"Gemini.py: Normal Gemini response received. {bot_answer} ,{premium_applicable}")
     # ==== END: Normal Gemini Response without RAG ==== #
-
+    search_setting = get_settings().search_engine
+    documents = search_documents(
+            project_id=search_setting.project_number,
+            location=search_setting.location,
+            engine_id=search_setting.engine_id,
+            search_query=user_turn_content.parts[0].text,
+    )
+    for document in documents:
+        logger.info(f"Document found: title: {document.title} , link: {document.link} , snippet: {document.snippet}")
     # ==== START: Trigger this when the response is premium worthy ==== #
     if premium_applicable:
 
@@ -121,9 +130,6 @@ def generate(chat_history: List[Content], user_turn: Union[Content,str], vec: Ve
         ]
     )
         # ==== END: Trigger this when the response is premium worthy ==== #
-
-
-
 
     return (chat_history, gemini_response_content, video_file_link, video_file_name, premium_response_content)
 
