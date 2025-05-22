@@ -30,7 +30,7 @@ class GeminiResponse(BaseModel):
     )
     answer: str = Field(description="The answer to the user's question")
     premium_applicable: bool = Field(
-        description="Whether the answer can be further improved by the retrival augement generation (RAG) process."
+        description="Set this as true if the user ask a question. If it is not a question, set it as false."
     )
 
 def generate(chat_history: List[Content], user_turn: Union[Content,str], vec: VectorStore) -> Tuple[List[Content], Content]:

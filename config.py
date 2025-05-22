@@ -47,7 +47,7 @@ class LLMSettings(BaseModel):
     model_top_p: float = _get_config_variable("MODEL_TOP_P", "0.8")
     model_max_output_tokens: int = _get_config_variable("MODEL_MAX_OUTPUT_TOKENS", "1024")
 
-    system_instruction: str = _get_config_variable("SYSTEM_INSTRUCTION", "You are an AI assistant for question-answering tasks. Answer the user response concisely. For questions that are not mundane, use the retrieval augmented generation (RAG) process to improve the answer.")
+    system_instruction: str = _get_config_variable("SYSTEM_INSTRUCTION", "You are an AI assistant for question-answering tasks. Answer the user response concisely. If a user ask a question, respond to the user and also set the premium_applicable as true. If it is not a question, set the premium_applicable as false.")
 
 
 class DatabaseSettings(BaseModel):
