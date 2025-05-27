@@ -6,10 +6,10 @@ import pandas as pd
 import uuid
 from datetime import datetime
 import asyncio
-from config import DatabaseSettings
+from config import DatabaseSettings, LLMSettings
 
 
-MODEL_ID = "gemini-2.0-flash-001"
+MODEL_ID = LLMSettings().gcp_model
 
 
 # Set up logging configuration

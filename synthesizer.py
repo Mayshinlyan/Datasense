@@ -87,7 +87,7 @@ class Synthesizer:
             tools=[]
         )
         response = client.models.generate_content(
-            model = "gemini-2.0-flash-001",
+            model = get_settings().llm.gcp_model,
             contents = question,
             config = generate_content_config,
         )

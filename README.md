@@ -71,7 +71,7 @@ These are variables you can control. If the variable includes a default value, y
 - GCP_PROJECT
 - GCP_LOCATION
 - SYSTEM_INSTRUCTION='You are Gemini, a helpful chat assistant'
-- GCP_MODEL="gemini-2.0-flash-001"
+- GCP_MODEL="gemini-2.5-flash-preview-05-20e"
 - MODEL_TEMPERATURE=0.2
 - MODEL_TOP_P=0.8
 - MODEL_MAX_OUTPUT_TOKENS=1024
