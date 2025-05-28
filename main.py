@@ -65,8 +65,7 @@ async def post_chat(user_message: UserMessage):
     Validates if premium dataset applies to response, sets premium flag if so.
     """
     try:
-        response = ds.chat_response(user_message.chatHistory, user_message.message, app.state.vector_store)
-        return response
+        return ds.chat_response(user_message.chatHistory, user_message.message, app.state.vector_store)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

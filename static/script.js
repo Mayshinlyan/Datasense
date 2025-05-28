@@ -86,29 +86,26 @@ class ChatInterface {
             }
 
             const data = await response.json();
-            console.log('Response from le /chat: ', data);
+            this.premiumMessage = data.premium_response.parts[0].text
+            this.isPremium = data.premium_applicable;
 
-
-            this.premiumMessage = data.premiumResponse.parts[0].text
-            this.isPremium = data.premiumFlag;
-
-            if (data.premiumFlag) (
-                this.fileLinks = data.videoFileLink,
-                this.fileNames = data.videoFileName
+            if (data.premium_applicable) (
+                this.fileLinks = data.video_file_links,
+                this.fileNames = data.video_file_names
             )
 
             // Handle response from the server
-            await this.addMessage('assistant', data.modelResponse.parts[0].text)
+            await this.addMessage('assistant', data.gemini_response.parts[0].text)
 
 
-            console.log('<HandleUserInput> Gemini Response: ',data.modelResponse.parts[0].text)
-            console.log('<HandleUserInput>: Premium Response: ',data.premiumResponse.parts[0].text)
-            console.log('<HandleUserInput> data.premiumFlag: ',data.premiumFlag)
+            console.log('<HandleUserInput> Gemini Response: ',data.gemini_response.parts[0].text)
+            console.log('<HandleUserInput>: Premium Response: ',data.premium_response.parts[0].text)
+            console.log('<HandleUserInput> data.premium_flag: ',data.premium_flag)
 
 
 
             // Check if premium content should be shown
-            //if (data.premiumFlag) {
+            //if (data.premium_flag) {
             //    await new Promise(resolve => setTimeout(resolve, 1000));
             //    this.showUpgradeModal();
             //}

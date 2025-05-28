@@ -2,14 +2,14 @@
 DataSense Library
 """
 from typing import List, Dict
-from gemini import generate
+from gemini import generate, Response
 from google.genai.types import Part, Content
 from config import setup_logging
 
 logger = setup_logging()
 
 
-def chat_response(history_obj: List[Dict], user_input: str, vector_store) -> Dict:
+def chat_response(history_obj: List[Dict], user_input: str, vector_store) -> Response:
     """
     Takes user input. Gets Gemini response.
     """
@@ -20,14 +20,13 @@ def chat_response(history_obj: List[Dict], user_input: str, vector_store) -> Dic
         elif item['role'] == 'assistant':
             content_history.append(Content(role='assistant', parts=[Part.from_text(text=item['content'])]))
 
+    logger.info(f"datasense.py: Content history prepared with {len(content_history)} turns.")
+    try:
+       response = generate(content_history, user_input, vector_store)
+       logger.info(f"datasense.py: Gemini response generated successfully.", extra={"response": response})
+    except Exception as e:
+        logger.error(f"datasense.py: Error generating response: {e}")
+        raise e
+    logger.info(f"datasense.py: Gemini response received.")
 
-    content_history, gemini_response_content, video_file_link, video_file_name, premium_response_content = generate(content_history, user_input, vector_store)
-
-    logger.info(f"datasense.py: Gemini response received. {gemini_response_content}, {video_file_link}, {video_file_name}")
-
-    if video_file_link!="N/A" and premium_response_content.parts[0].text!="N/A":
-        premium_flag = True
-        print(f"datasense.py: Premium response received. {premium_flag}")
-    else:
-        premium_flag = False
-    return {"chatHistory": history_obj, "modelResponse": gemini_response_content, "premiumFlag": premium_flag, "videoFileLink": video_file_link, "videoFileName": video_file_name, "premiumResponse": premium_response_content}
+    return response

@@ -13,6 +13,7 @@ from database import VectorStore
 from synthesizer import Synthesizer
 from pydantic import BaseModel, Field
 from search import search_documents
+from dataclasses import dataclass
 
 import logging
 
@@ -24,6 +25,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+@dataclass
+class Response:
+    chat_history: List[Content]
+    gemini_response: Content
+    video_file_links: str
+    video_file_names: str
+    premium_response: Content = None
+    pdf_file_links: List[str] = None
+    pdf_file_names: List[str] = None
+    premium_applicable: bool = False
+
 # Response model for normal Gemini response
 class GeminiResponse(BaseModel):
     thought_process: List[str] = Field(
@@ -34,7 +46,7 @@ class GeminiResponse(BaseModel):
         description="Set this as true if the user ask a question. If it is not a question, set it as false."
     )
 
-def generate(chat_history: List[Content], user_turn: Union[Content,str], vec: VectorStore) -> Tuple[List[Content], Content]:
+def generate(chat_history: List[Content], user_turn: Union[Content,str], vec: VectorStore) -> Response:
     """
     Call the model, handles both Content and Str type inputs.
     """
@@ -131,5 +143,14 @@ def generate(chat_history: List[Content], user_turn: Union[Content,str], vec: Ve
     )
         # ==== END: Trigger this when the response is premium worthy ==== #
 
-    return (chat_history, gemini_response_content, video_file_link, video_file_name, premium_response_content)
+    return Response(
+        chat_history=chat_history,
+        gemini_response=gemini_response_content,
+        video_file_links=video_file_link,
+        video_file_names=video_file_name,
+        premium_response=premium_response_content,
+        pdf_file_links=[],
+        pdf_file_names=[],
+        premium_applicable=premium_applicable,
+    )
 
