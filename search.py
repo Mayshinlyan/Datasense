@@ -96,8 +96,25 @@ def search_documents(
         document = Document(
             title=derived_struct_data.get("title", ""),
             snippet=snippet_list,
-            link=derived_struct_data.get("link", "")
+            link=authenticated_url(derived_struct_data.get("link", ""))
         )
         document_list.append(document)
 
     return document_list
+
+def authenticated_url(
+    gsutil_uri: str
+) -> str:
+    """
+    Returns an authenticated URL for a Google Cloud Storage URI.
+    
+    Args:
+        gsutil_uri (str): The Google Cloud Storage URI.
+    
+    Returns:
+        str: The authenticated URL.
+    """
+    if not gsutil_uri.startswith("gs://"):
+        raise ValueError("The provided URI must start with 'gs://'")
+    gsutil_uri = gsutil_uri[5:]  # Remove 'gs://'
+    return f"https://storage.mtls.cloud.google.com/{gsutil_uri}"
