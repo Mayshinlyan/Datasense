@@ -149,8 +149,8 @@ def generate(chat_history: List[Content], user_turn: Union[Content,str], vec: Ve
         video_file_links=video_file_link,
         video_file_names=video_file_name,
         premium_response=premium_response_content,
-        pdf_file_links=[],
-        pdf_file_names=[],
+        pdf_file_links=[document.link for document in documents],
+        pdf_file_names=[document.title for document in documents],
         premium_applicable=premium_applicable,
     )
 

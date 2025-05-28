@@ -86,12 +86,13 @@ class ChatInterface {
             }
 
             const data = await response.json();
+            console.log('<HandleUserInput> Response from /chat: ', data);
             this.premiumMessage = data.premium_response.parts[0].text
             this.isPremium = data.premium_applicable;
 
             if (data.premium_applicable) (
-                this.fileLinks = data.video_file_links,
-                this.fileNames = data.video_file_names
+                this.fileLinks = data.video_file_links.concat(data.pdf_file_links),
+                this.fileNames = data.video_file_names.concat(data.pdf_file_names)
             )
 
             // Handle response from the server
