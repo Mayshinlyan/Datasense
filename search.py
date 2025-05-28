@@ -50,6 +50,11 @@ def search_documents(
         snippet_spec=discoveryengine.SearchRequest.ContentSearchSpec.SnippetSpec(
             return_snippet=True
         ),
+        extractive_content_spec=discoveryengine.SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
+            # For information about extractive content, refer to:
+            # https://cloud.google.com/generative-ai-app-builder/docs/extractive-content
+            max_extractive_segment_count=1,
+        ),
         # For information about search summaries, refer to:
         # https://cloud.google.com/generative-ai-app-builder/docs/get-search-summaries
         summary_spec=discoveryengine.SearchRequest.ContentSearchSpec.SummarySpec(
@@ -87,17 +92,24 @@ def search_documents(
     # Handle the response
     document_list = []
     for result in page_result:
+
         derived_struct_data = result.document.derived_struct_data
         derived_snippets = derived_struct_data.get("snippets", [])
         snippet_list = []
         for i, snippet_item_struct in enumerate(derived_snippets):
             snippet_item = snippet_item_struct.get("snippet", "")
             snippet_list.append(snippet_item)
+        extractive_segments = derived_struct_data.get("extractive_segments", [])
+        page = 1
+        if extractive_segments:
+            page = extractive_segments[0].get("pageNumber", 1)
+        authenticated_link = derived_struct_data.get("link", "")
         document = Document(
             title=derived_struct_data.get("title", ""),
             snippet=snippet_list,
-            link=authenticated_url(derived_struct_data.get("link", ""))
+            link=f'{authenticated_url(derived_struct_data.get("link", ""))}#page={page}',
         )
+
         document_list.append(document)
 
     return document_list

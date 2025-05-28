@@ -51,7 +51,7 @@ class Synthesizer:
             context, columns_to_keep=["video_file_path", "page_content", "partner", "file_name"]
         )
 
-        logger.info(f"Synthesizer.py: This is the context string {context_str}")
+        logger.info(f"Synthesizer.py: context_str receive.")
 
         SYSTEM_PROMPT = f"""
             # Role and Purpose
@@ -92,7 +92,7 @@ class Synthesizer:
             config = generate_content_config,
         )
 
-        logger.info(f"Synthesizer.py: Synthesized response received. {response}")
+        logger.info(f"Synthesizer.py: Synthesized response received.")
 
         return response
 

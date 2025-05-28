@@ -93,7 +93,7 @@ def generate(chat_history: List[Content], user_turn: Union[Content,str], vec: Ve
     bot_answer = result.answer
     premium_applicable = result.premium_applicable
 
-    logger.info(f"Gemini.py: Normal Gemini response received. {bot_answer} ,{premium_applicable}")
+    logger.info(f"Gemini.py: Normal Gemini response received. ")
     # ==== END: Normal Gemini Response without RAG ==== #
     search_setting = get_settings().search_engine
     documents = search_documents(
