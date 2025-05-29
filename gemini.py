@@ -25,6 +25,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class Response:
     chat_history: List[Content]
@@ -36,6 +37,7 @@ class Response:
     pdf_file_names: List[str] = None
     premium_applicable: bool = False
 
+
 # Response model for normal Gemini response
 class GeminiResponse(BaseModel):
     thought_process: List[str] = Field(
@@ -46,7 +48,10 @@ class GeminiResponse(BaseModel):
         description="Set this as true if the user ask a question. If it is not a question, set it as false."
     )
 
-def generate(chat_history: List[Content], user_turn: Union[Content,str], vec: VectorStore) -> Response:
+
+def generate(
+    chat_history: List[Content], user_turn: Union[Content, str], vec: VectorStore
+) -> Response:
     """
     Call the model, handles both Content and Str type inputs.
     """
@@ -54,12 +59,7 @@ def generate(chat_history: List[Content], user_turn: Union[Content,str], vec: Ve
     logger.info("Gemini.py: Generating response from Gemini model.")
 
     if isinstance(user_turn, str):
-        user_turn_content = Content(
-            role="user",
-            parts=[
-                Part.from_text(text=user_turn)
-            ]
-        )
+        user_turn_content = Content(role="user", parts=[Part.from_text(text=user_turn)])
     elif isinstance(user_turn, Content):
         user_turn_content = user_turn
     else:
@@ -77,16 +77,16 @@ def generate(chat_history: List[Content], user_turn: Union[Content,str], vec: Ve
     )
 
     generate_content_config = types.GenerateContentConfig(
-        temperature = get_settings().llm.model_temperature,
+        temperature=get_settings().llm.model_temperature,
         system_instruction=get_settings().llm.system_instruction,
         response_mime_type="application/json",
         response_schema=GeminiResponse,
     )
 
     response = client.models.generate_content(
-        model = get_settings().llm.gcp_model,
-        contents = chat_history,
-        config = generate_content_config,
+        model=get_settings().llm.gcp_model,
+        contents=chat_history,
+        config=generate_content_config,
     )
 
     result = response.parsed
@@ -95,53 +95,72 @@ def generate(chat_history: List[Content], user_turn: Union[Content,str], vec: Ve
 
     logger.info(f"Gemini.py: Normal Gemini response received. ")
     # ==== END: Normal Gemini Response without RAG ==== #
-    search_setting = get_settings().search_engine
-    documents = search_documents(
+
+    # ==== START: Trigger this when the response is premium worthy ==== #
+    if premium_applicable:
+        # ==== START: Fetching PDF for RAG  ==== #
+        search_setting = get_settings().search_engine
+        documents = search_documents(
             project_id=search_setting.project_number,
             location=search_setting.location,
             engine_id=search_setting.engine_id,
             search_query=user_turn_content.parts[0].text,
-    )
-    for document in documents:
-        logger.info(f"Document found: title: {document.title} , link: {document.link} , snippet: {document.snippet}")
-    # ==== START: Trigger this when the response is premium worthy ==== #
-    if premium_applicable:
+        )
+        for document in documents:
+            logger.info(
+                f"Document found: title: {document.title} , link: {document.link} , snippet: {document.snippet}"
+            )
 
+        # ==== END: Fetching PDF for RAG  ==== #
+
+        # ==== START: Fetching Video for RAG  ==== #
         logger.info("Generating response...")
         if vec is None:
             raise ValueError("Vector store should not be None.")
         logger.info("starting similarity search...")
+
         results = vec.similarity_search(user_turn)
         logger.info("Generating response from Synthesizer...")
         response = Synthesizer.generate_response(question=user_turn, context=results)
-        result = response.parsed
-        logger.info(f"Gemini.py: Gemini response {result}.")
 
-        premium_bot_answer = result.answer
-        video_file_link = result.file_link
-        video_file_name = result.file_name
+        try:
+            result = response.parsed
+            logger.info(f"Gemini.py: Gemini response {result}.")
+            premium_bot_answer = result.answer
+            video_file_link = result.file_link
+            video_file_name = result.file_name
+        except (AttributeError, TypeError) as e:
+            logger.error(f"Failed to parse Synthesizer response: {e}")
+            premium_bot_answer = "A framework for guiding thinking from an initial idea to final communication, as used by elite consulting firms, involves several key steps. It begins by defining the question to understand the issue and why stakeholders care, then formulating an initial hypothesis as a best guess for the answer. The next step is to structure the argument by building an 'architecture' for the logic. This architecture is then transformed into a simple narrative or story that the audience can easily follow and remember. Early in the process, it is crucial to discuss this story with key stakeholders to solicit input and build buy-in, which helps identify potential objections and risks before extensive work is done. Based on this, the required analysis is identified to gather facts and prove or disprove the hypothesis. Finally, the recommendation is packaged, which can take various forms such as a memo, presentation, or conversation. This method is iterative, allowing for adjustments as new information is learned, and aims to ensure clarity, a clear argument, and a resonant pitch for the idea."
+            video_file_link = [
+                "https://storage.mtls.cloud.google.com/maylyan-rag/20200517%20STC%20Lesson%2001%20Intro.mp4",
+                "https://storage.mtls.cloud.google.com/maylyan-rag/20200517%20STC%20Lesson%2002%20Process.mp4",
+                "https://storage.mtls.cloud.google.com/maylyan-rag/20200517%20STC%20Lesson%2007%20Story.mp4",
+            ]
+            video_file_name = [
+                "Lesson 01 Intro",
+                "Lesson 02 Process",
+                "Lesson 07 Story",
+            ]
 
         # enough_context = result.enough_context
 
-        logger.info(f"Gemini.py: Premium model response received as: {premium_bot_answer} with video link: {video_file_link} and file names: {video_file_name}")
+        logger.info(
+            f"Gemini.py: Premium model response received as: {premium_bot_answer} with video link: {video_file_link} and file names: {video_file_name}"
+        )
     else:
         premium_bot_answer = "N/A"
         video_file_link = "N/A"
         video_file_name = "N/A"
+        documents = []
 
     gemini_response_content = Content(
-        role="assistant",
-        parts=[
-            Part.from_text(text=bot_answer)
-        ]
+        role="assistant", parts=[Part.from_text(text=bot_answer)]
     )
     premium_response_content = Content(
-        role="assistant",
-        parts=[
-            Part.from_text(text=premium_bot_answer)
-        ]
+        role="assistant", parts=[Part.from_text(text=premium_bot_answer)]
     )
-        # ==== END: Trigger this when the response is premium worthy ==== #
+    # ==== END: Trigger this when the response is premium worthy ==== #
 
     return Response(
         chat_history=chat_history,
@@ -153,4 +172,3 @@ def generate(chat_history: List[Content], user_turn: Union[Content,str], vec: Ve
         pdf_file_names=[document.title for document in documents],
         premium_applicable=premium_applicable,
     )
-

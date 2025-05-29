@@ -33,6 +33,20 @@ then try running this command in a separate terminal window:
 3. In the end, kill the app and kill the proxy by running this within the terminal window (in your cloudtop): Ctrl+C
 
 
+# Steps to deploy the app:
+
+1. Clone the repo to Cloud Shell or your local repository
+2. Install docker if you haven't already. Cloud Shell should already have it installed.
+3. Change the branch to **'userapp'**
+4. Run the following commands to build and push the docker image
+```powershell
+docker build -t us-central1-docker.pkg.dev/lamb-puppy-215354/datasense/backend .
+docker push us-central1-docker.pkg.dev/lamb-puppy-215354/datasense/backend
+```
+5. Verify the new image is pushed in the Artifact Registry in GCP Console.
+6. Change the revision of the 'datasense-rag' Cloud Run service to the latest image
+
+
 # RAG Architecture Explanation
 
 - **transcribe.py**: use this file to transcribe the video files

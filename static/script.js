@@ -148,7 +148,8 @@ class ChatInterface {
             if (isPaid && isPremium) {
                 for (let i = 0; i < fileLinks.length; i++) {
                     videoChipComponent += `<div class="premium-prompt-chip">
-                    <span class="material-icons">verified</span>
+                    <span class="material-icons"><img class="partner-logos" src="static/images/thoughtleaders-logo.png" alt="Thought Leaders"></span>
+
                     <button class="chip-button"> <a class='video-link' href="${fileLinks[i]}" target="_blank">${fileNames[i]}</a></button>
                     </div>`
 
@@ -227,9 +228,7 @@ class ChatInterface {
                         <img src="static/images/datasense.svg" alt="DataSense">
                     </div>
                     <div class="partner-logos">
-                        <img src="static/images/aa.png" alt="American Airlines">
-                        <img src="static/images/delta.jpg" alt="Qantas">
-                        <img src="static/images/qantas.svg" alt="Delta">
+                        <img src="static/images/thoughtleaders-logo.png" alt="Thought Leaders">
                         <span class="more-partners">+</span>
                     </div>
                 </div>
@@ -353,9 +352,7 @@ class ChatInterface {
                             <img src="static/images/datasense.svg" alt="Gemini">
                         </div>
                         <div class="partner-logos">
-                            <img src="static/images/delta.jpg" alt="delta">
-                            <img src="static/images/qantas.svg" alt="qantas">
-                            <img src="static/images/aa.png" alt="american airlines">
+                            <img src="static/images/thoughtleaders-logo.png" alt="Thought Leaders">
                             <span class="more-partners">+</span>
                         </div>
                         <button class="close-button">
