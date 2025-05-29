@@ -106,10 +106,6 @@ def generate(
             engine_id=search_setting.engine_id,
             search_query=user_turn_content.parts[0].text,
         )
-        for document in documents:
-            logger.info(
-                f"Document found: title: {document.title} , link: {document.link} , snippet: {document.snippet}"
-            )
 
         # ==== END: Fetching PDF for RAG  ==== #
 
@@ -121,7 +117,8 @@ def generate(
 
         results = vec.similarity_search(user_turn)
         logger.info("Generating response from Synthesizer...")
-        response = Synthesizer.generate_response(question=user_turn, context=results)
+        response = Synthesizer.generate_response(question=user_turn, video_context=results, 
+                                                  documents=documents)
 
         try:
             result = response.parsed

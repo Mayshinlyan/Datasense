@@ -27,7 +27,8 @@ from google.protobuf.struct_pb2 import Struct, ListValue, Value
 class Document:
     title: str = ""
     link: str  = ""
-    snippet: List[str] = None
+    snippets: List[str] = None
+    segment_content: str = ""
 
 def search_documents(
     project_id: str,
@@ -53,7 +54,7 @@ def search_documents(
         extractive_content_spec=discoveryengine.SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
             # For information about extractive content, refer to:
             # https://cloud.google.com/generative-ai-app-builder/docs/extractive-content
-            max_extractive_segment_count=1,
+            max_extractive_segment_count=5,
         ),
         # For information about search summaries, refer to:
         # https://cloud.google.com/generative-ai-app-builder/docs/get-search-summaries
@@ -92,7 +93,6 @@ def search_documents(
     # Handle the response
     document_list = []
     for result in page_result:
-
         derived_struct_data = result.document.derived_struct_data
         derived_snippets = derived_struct_data.get("snippets", [])
         snippet_list = []
@@ -101,13 +101,16 @@ def search_documents(
             snippet_list.append(snippet_item)
         extractive_segments = derived_struct_data.get("extractive_segments", [])
         page = 1
+        segment_content = ""
         if extractive_segments:
             page = extractive_segments[0].get("pageNumber", 1)
+        segment_content = '\n'.join(segment.get("content", "")for segment in extractive_segments) 
         authenticated_link = derived_struct_data.get("link", "")
         document = Document(
             title=derived_struct_data.get("title", ""),
-            snippet=snippet_list,
+            snippets=snippet_list,
             link=f'{authenticated_url(derived_struct_data.get("link", ""))}#page={page}',
+            segment_content=segment_content
         )
 
         document_list.append(document)

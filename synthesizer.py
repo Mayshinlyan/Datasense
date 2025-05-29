@@ -7,6 +7,7 @@ from google.genai import types
 from google.genai.types import Part, Content
 import logging
 from config import get_settings
+from search import Document
 
 logging.basicConfig(
     level=logging.INFO,
@@ -35,9 +36,8 @@ class SynthesizedResponse(BaseModel):
 
 class Synthesizer:
 
-
     @staticmethod
-    def generate_response(question: str, context: pd.DataFrame) -> SynthesizedResponse:
+    def generate_response(question: str, video_context: pd.DataFrame, documents: List[Document]) -> SynthesizedResponse:
         """Generates a synthesized response based on the question and context.
 
         Args:
@@ -47,11 +47,10 @@ class Synthesizer:
         Returns:
             A SynthesizedResponse containing thought process and answer.
         """
-        context_str = Synthesizer.dataframe_to_json(
-            context, columns_to_keep=["video_file_path", "page_content", "partner", "file_name"]
+        video_context_str = Synthesizer.dataframe_to_json(
+            video_context, columns_to_keep=["video_file_path", "page_content", "partner", "file_name"]
         )
-
-        logger.info(f"Synthesizer.py: context_str receive.")
+        documents_str = ".".join([doc.segment_content for doc in documents])
 
         SYSTEM_PROMPT = f"""
             # Role and Purpose
@@ -68,7 +67,7 @@ class Synthesizer:
             6. Maintain a helpful and professional tone appropriate for customer service.
 
             Here is the relevant context retrieved from the knowledge database:
-            {context_str}
+            {video_context_str} {documents_str}
 
             Review the question from the user:
         """
