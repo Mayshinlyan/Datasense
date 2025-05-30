@@ -1268,3 +1268,113 @@ body {
 .credit-option.subscription input:checked ~ .credit-content {
     background: rgba(66, 133, 244, 0.15);
 }
+
+/* PDF Card Styling */
+.pdf-card {
+    background-color: var(--card-bg, #303134); /* Use variable for card background */
+    color: var(--text-color, #e3e3e3);         /* Use variable for default text */
+    border: 1px solid var(--border-color, #3c4043); /* Use variable for border */
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    padding: 15px;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Google Sans', sans-serif; /* Ensure font consistency */
+}
+
+.pdf-card:hover {
+    background-color: var(--hover-color, #3c4043); /* Use variable for hover state */
+    transform: translateY(-2px);
+}
+
+.pdf-card .card-header {
+    margin-bottom: 12px;
+}
+
+.pdf-card .card-url {
+    font-size: 0.8em;
+    color: #9aa0a6; /* Consistent secondary text color from your theme */
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pdf-card .card-body {
+    flex-grow: 1;
+}
+
+.pdf-card .card-title {
+    font-size: 1.1em;
+    font-weight: 500;
+    margin: 0 0 10px 0;
+    display: flex;
+    align-items: center;
+}
+
+/* Using red logo as a specific branding choice, as previously requested */
+.pdf-card .pdf-icon-logo {
+    background-color: #fa5349; 
+    color: #ffffff;
+    font-size: 18px;
+    padding: 4px;
+    border-radius: 4px;
+    margin-right: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pdf-card .card-title a {
+    text-decoration: none;
+    color: var(--gemini-blue, #8ab4f8); /* Use variable for primary link color */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pdf-card .card-title a:hover {
+    text-decoration: underline;
+}
+
+.pdf-card .card-snippet {
+    font-size: 0.9em;
+    color: var(--text-color, #e3e3e3); /* Use variable for main text */
+    margin: 0 0 12px 0;
+    line-height: 1.4;
+    white-space: normal;
+    padding-left: 12px;
+    border-left: 3px solid var(--gemini-blue, #8ab4f8); /* Use variable for accent bar */
+    display: -webkit-box;
+    line-clamp: 3;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pdf-card .card-footer {
+    font-size: 0.85em;
+    color: #9aa0a6; /* Consistent secondary text color */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color, #3c4043); /* Use variable for separator */
+}
+
+.pdf-card .preview-icon {
+    font-size: 22px;
+    color: var(--gemini-blue, #8ab4f8); /* Use variable for interactive icon */
+    cursor: pointer;
+    transition: filter 0.2s ease;
+    text-decoration: none;
+}
+
+.pdf-card .preview-icon:hover {
+    filter: brightness(1.2); /* A simple way to lighten on hover */
+}

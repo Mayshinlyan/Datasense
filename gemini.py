@@ -12,7 +12,7 @@ from config import get_settings
 from database import VectorStore
 from synthesizer import Synthesizer
 from pydantic import BaseModel, Field
-from search import search_documents
+from search import search_documents, Document
 from dataclasses import dataclass
 
 import logging
@@ -33,9 +33,8 @@ class Response:
     video_file_links: str
     video_file_names: str
     premium_response: Content = None
-    pdf_file_links: List[str] = None
-    pdf_file_names: List[str] = None
     premium_applicable: bool = False
+    pdf_documents: List[Document] = None
 
 
 # Response model for normal Gemini response
@@ -165,7 +164,6 @@ def generate(
         video_file_links=video_file_link,
         video_file_names=video_file_name,
         premium_response=premium_response_content,
-        pdf_file_links=[document.link for document in documents],
-        pdf_file_names=[document.title for document in documents],
         premium_applicable=premium_applicable,
+        pdf_documents=documents,
     )

@@ -7,6 +7,7 @@ class ChatInterface {
         this.premiumMessage = '';
         this.fileLinks = [];
         this.fileNames = [];
+        this.pdfDocuments = []; // ampma: Initialize pdfDocuments
         this.initializeEventListeners();
     }
 
@@ -90,10 +91,11 @@ class ChatInterface {
             this.premiumMessage = data.premium_response.parts[0].text
             this.isPremium = data.premium_applicable;
 
-            if (data.premium_applicable) (
-                this.fileLinks = data.video_file_links.concat(data.pdf_file_links),
-                this.fileNames = data.video_file_names.concat(data.pdf_file_names)
-            )
+            if (data.premium_applicable) {
+                this.fileLinks = data.video_file_links;
+                this.fileNames = data.video_file_names;
+                this.pdfDocuments = data.pdf_documents;
+            }
 
             // Handle response from the server
             await this.addMessage('assistant', data.gemini_response.parts[0].text)
@@ -183,7 +185,7 @@ class ChatInterface {
                 <div class="message-content">
                     <div style="white-space: pre-line">${formattedContent}</div>
                     ${premiumChip}
-
+                    <div class="pdf-cards-container"></div>
                     <div class="videoChipComponent">${videoChipComponent}<div>
                     <div class="message-actions">
                         <button title="Like">
@@ -204,17 +206,60 @@ class ChatInterface {
                     </div>
                 </div>
             `;
+            if (isPaid && isPremium) {
+                const pdfContainer = messageDiv.querySelector('.pdf-cards-container');
+                if (pdfContainer) {
+                    this.displayPdfCards(pdfContainer);
+                }
+            }
             chatMessages.appendChild(messageDiv);
             messageDiv.querySelector('.message-avatar').classList.add('typing');
             setTimeout(() => {
                 messageDiv.querySelector('.message-avatar').classList.remove('typing');
             }, 1000);
         }
-
         smoothScrollTo(chatMessages, chatMessages.scrollHeight);
+    }
 
+    /**
+     * Renders PDF cards into a given container element.
+     * @param {HTMLElement} container - The element to append the cards to.
+     */
+     async displayPdfCards(container) {
+        // Do nothing if there are no documents to display
+        if (!this.pdfDocuments || this.pdfDocuments.length === 0) {
+            return;
+        }
 
+        this.pdfDocuments.forEach(doc => {
+            // Create the main card element
+            const card = document.createElement('div');
+            card.className = 'pdf-card';
 
+            // Use innerHTML to build the card structure
+            card.innerHTML = `
+                <div class="card-header">
+                    <span class="card-url">${doc.link}</span>
+                </div>
+                <div class="card-body">
+                    <h4 class="card-title">
+                        <span class="material-icons pdf-icon">picture_as_pdf</span>
+                        <a href="${doc.link}" target="_blank" title="${doc.title}">${doc.title}</a>
+                    </h4>
+                    <p class="card-snippet">"${doc.snippets && doc.snippets.length > 0 ? doc.snippets.join(" ") : 'No snippet available.'}"</p>
+                </div>
+                <div class="card-footer">
+                    <span class="card-page-number">Page: ${doc.page_number}</span>
+                    <a class="material-icons preview-icon" title="Preview" href="${doc.link_with_page}">visibility</a>
+                </div>
+            `;
+
+            // Append the completed card to the container
+            container.appendChild(card);
+        });
+
+        // Clear the array after rendering to prevent duplicates in future messages
+        this.pdfDocuments = [];
     }
 
     async showUpgradeModal() {

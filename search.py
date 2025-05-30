@@ -27,8 +27,10 @@ from google.protobuf.struct_pb2 import Struct, ListValue, Value
 class Document:
     title: str = ""
     link: str  = ""
+    link_with_page: str = ""
     snippets: List[str] = None
     segment_content: str = ""
+    page_number: int = 1
 
 def search_documents(
     project_id: str,
@@ -105,11 +107,13 @@ def search_documents(
         if extractive_segments:
             page = extractive_segments[0].get("pageNumber", 1)
         segment_content = '\n'.join(segment.get("content", "")for segment in extractive_segments) 
-        authenticated_link = derived_struct_data.get("link", "")
+        authenticated_link = authenticated_url(derived_struct_data.get("link", ""))
         document = Document(
             title=derived_struct_data.get("title", ""),
             snippets=snippet_list,
-            link=f'{authenticated_url(derived_struct_data.get("link", ""))}#page={page}',
+            link=authenticated_link,
+            page_number=page,
+            link_with_page=f'{authenticated_link}#page={page}',
             segment_content=segment_content
         )
 
