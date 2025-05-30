@@ -246,11 +246,11 @@ class ChatInterface {
                         <span class="material-icons pdf-icon">picture_as_pdf</span>
                         <a href="${doc.link}" target="_blank" title="${doc.title}">${doc.title}</a>
                     </h4>
-                    <p class="card-snippet">"${doc.snippets && doc.snippets.length > 0 ? doc.snippets.join(" ") : 'No snippet available.'}"</p>
+                    <p class="card-snippet">${doc.snippets && doc.snippets.length > 0 ? doc.snippets.join(" ") : 'No snippet available.'}</p>
                 </div>
                 <div class="card-footer">
                     <span class="card-page-number">Page: ${doc.page_number}</span>
-                    <a class="material-icons preview-icon" title="Preview" href="${doc.link_with_page}">visibility</a>
+                    <a class="material-icons preview-icon" title="Preview" href="${doc.link_with_page}" target="_blank">visibility</a>
                 </div>
             `;
 
