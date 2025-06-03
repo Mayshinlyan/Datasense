@@ -12,7 +12,7 @@ from config import get_settings
 from database import VectorStore
 from synthesizer import Synthesizer
 from pydantic import BaseModel, Field
-from search import search_documents, Document
+from search import SearchService, Document
 from dataclasses import dataclass
 
 import logging
@@ -48,8 +48,8 @@ class GeminiResponse(BaseModel):
     )
 
 
-def generate(
-    chat_history: List[Content], user_turn: Union[Content, str], vec: VectorStore
+async def generate(
+    chat_history: List[Content], user_turn: Union[Content, str], vec: VectorStore, search_engine: SearchService
 ) -> Response:
     """
     Call the model, handles both Content and Str type inputs.
@@ -98,13 +98,7 @@ def generate(
     # ==== START: Trigger this when the response is premium worthy ==== #
     if premium_applicable:
         # ==== START: Fetching PDF for RAG  ==== #
-        search_setting = get_settings().search_engine
-        documents = search_documents(
-            project_id=search_setting.project_number,
-            location=search_setting.location,
-            engine_id=search_setting.engine_id,
-            search_query=user_turn_content.parts[0].text,
-        )
+        documents = await search_engine.search(user_turn_content.parts[0].text)
 
         # ==== END: Fetching PDF for RAG  ==== #
 
