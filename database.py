@@ -16,23 +16,54 @@ logger = setup_logging()
 class VectorStore:
     """A class for managing vector operations and database interactions."""
 
-    def __init__(self):
-        """Initialize the VectorStore with settings, AlloyDB Vector client."""
-        self.settings = get_settings().database
+    def __init__(
+        self, engine: AlloyDBEngine, vector_store: AlloyDBVectorStore, settings: dict
+    ):
+        """
+        Private constructor. Use the `create` classmethod for initialization.
+        """
+        self.engine = engine
+        self.vector_store = vector_store
+        self.settings = settings
+        logger.info("VectorStore instance configured.")
 
-        self.engine = self.create_db()
+    @classmethod
+    async def create(cls):
+        """
+        Asynchronously creates and initializes an instance of VectorStore.
+        """
+        logger.info("Asynchronously initializing VectorStore...")
+        settings = get_settings().database
 
-        # uncomment this if you are creating table for the first time.
-        # self.create_table()
+        try:
+            engine = await AlloyDBEngine.afrom_instance(
+                project_id=settings.db_project,
+                region=settings.db_location,
+                cluster=settings.cluster,
+                instance=settings.instance,
+                database=settings.database,
+                user=settings.dbuser,
+                password=settings.dbpassword,
+            )
 
-        embedding_service = VertexAIEmbeddings(
-            model_name=self.settings.embedding_model, project=self.settings.db_project
-        )
-        self.vector_store = AlloyDBVectorStore.create_sync(
-            self.engine,
-            table_name=self.settings.table,
-            embedding_service=embedding_service,
-        )
+            embedding_service = VertexAIEmbeddings(
+                model_name=settings.embedding_model, project=settings.db_project
+            )
+
+            vector_store = await AlloyDBVectorStore.create(
+                engine,
+                table_name=settings.table,
+                embedding_service=embedding_service,
+            )
+
+            logger.info("Async VectorStore initialized successfully.")
+            # Create and return an instance of the class with the live connections.
+            return cls(engine, vector_store, settings)
+
+        except Exception as e:
+            logger.error(f"CRITICAL: Failed to initialize async VectorStore: {e}")
+            # Re-raise the exception to prevent the app from starting in a bad state
+            raise
 
     def create_db(self):
         """Create the database"""

@@ -32,108 +32,127 @@ class Document:
     segment_content: str = ""
     page_number: int = 1
 
-def search_documents(
-    project_id: str,
-    location: str,
-    engine_id: str,
-    search_query: str,
-) -> List[Document]:
-    client_options = (
-        ClientOptions(api_endpoint=f"{location}-discoveryengine.googleapis.com")
-        if location != "global"
-        else None
-    )
+class SearchService:
+    """A reusable service for interacting with Vertex AI Search."""
 
-    client = discoveryengine.SearchServiceClient(client_options=client_options)
-    serving_config = f"projects/{project_id}/locations/{location}/collections/default_collection/engines/{engine_id}/servingConfigs/default_config"
-    logging.info(f"search engine serving config {serving_config}")
-    content_search_spec = discoveryengine.SearchRequest.ContentSearchSpec(
-        # For information about snippets, refer to:
-        # https://cloud.google.com/generative-ai-app-builder/docs/snippets
-        snippet_spec=discoveryengine.SearchRequest.ContentSearchSpec.SnippetSpec(
-            return_snippet=True
-        ),
-        extractive_content_spec=discoveryengine.SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
-            # For information about extractive content, refer to:
-            # https://cloud.google.com/generative-ai-app-builder/docs/extractive-content
-            max_extractive_segment_count=5,
-        ),
-        # For information about search summaries, refer to:
-        # https://cloud.google.com/generative-ai-app-builder/docs/get-search-summaries
-        summary_spec=discoveryengine.SearchRequest.ContentSearchSpec.SummarySpec(
-            summary_result_count=5,
-            include_citations=True,
-            ignore_adversarial_query=True,
-            ignore_non_summary_seeking_query=True,
-            model_prompt_spec=discoveryengine.SearchRequest.ContentSearchSpec.SummarySpec.ModelPromptSpec(
-                preamble="YOUR_CUSTOM_PROMPT"
+    def __init__(self, client, serving_config: str):
+        """
+        Private constructor. Use the `create` classmethod for initialization.
+        """
+        self.client = client
+        self.serving_config = serving_config
+        logging.info(f"SearchService instance configured for: {self.serving_config}")
+
+    @classmethod
+    async def create(cls, project_id: str, location: str, engine_id: str):
+        """
+        Asynchronously creates and initializes the SearchService.
+        """
+        client_options = (
+            ClientOptions(api_endpoint=f"{location}-discoveryengine.googleapis.com")
+            if location != "global"
+            else None
+        )
+        client = discoveryengine.SearchServiceAsyncClient(client_options=client_options)
+
+        serving_config = f"projects/{project_id}/locations/{location}/collections/default_collection/engines/{engine_id}/servingConfigs/default_config"
+        return cls(client, serving_config)
+
+    async def search(self, search_query: str) -> List[Document]:
+        """
+        Performs an asynchronous search against the configured engine.
+
+        Args:
+            search_query: The user's query string.
+
+        Returns:
+            A list of Document objects.
+        """
+        content_search_spec = self._build_content_search_spec()
+
+        request = discoveryengine.SearchRequest(
+            serving_config=self.serving_config,
+            query=search_query,
+            page_size=5,
+            content_search_spec=content_search_spec,
+            query_expansion_spec=discoveryengine.SearchRequest.QueryExpansionSpec(
+                condition=discoveryengine.SearchRequest.QueryExpansionSpec.Condition.AUTO,
             ),
-            model_spec=discoveryengine.SearchRequest.ContentSearchSpec.SummarySpec.ModelSpec(
-                version="stable",
+            spell_correction_spec=discoveryengine.SearchRequest.SpellCorrectionSpec(
+                mode=discoveryengine.SearchRequest.SpellCorrectionSpec.Mode.AUTO
             ),
-        ),
-    )
-    # Refer to the `SearchRequest` reference for all supported fields:
-    # https://cloud.google.com/python/docs/reference/discoveryengine/latest/google.cloud.discoveryengine_v1.types.SearchRequest
-    request = discoveryengine.SearchRequest(
-        serving_config=serving_config,
-        query=search_query,
-        page_size=10,
-        content_search_spec=content_search_spec,
-        query_expansion_spec=discoveryengine.SearchRequest.QueryExpansionSpec(
-            condition=discoveryengine.SearchRequest.QueryExpansionSpec.Condition.AUTO,
-        ),
-        spell_correction_spec=discoveryengine.SearchRequest.SpellCorrectionSpec(
-            mode=discoveryengine.SearchRequest.SpellCorrectionSpec.Mode.AUTO
-        ),
-        # Optional: Use fine-tuned model for this request
-        # custom_fine_tuning_spec=discoveryengine.CustomFineTuningSpec(
-        #     enable_search_adaptor=True
-        # ),
-    )
-    page_result = client.search(request)
-    # Handle the response
-    document_list = []
-    for result in page_result:
-        derived_struct_data = result.document.derived_struct_data
-        derived_snippets = derived_struct_data.get("snippets", [])
-        snippet_list = []
-        for i, snippet_item_struct in enumerate(derived_snippets):
-            snippet_item = snippet_item_struct.get("snippet", "")
-            snippet_list.append(snippet_item)
-        extractive_segments = derived_struct_data.get("extractive_segments", [])
-        page = 1
-        segment_content = ""
+        )
+
+        search_results_pager = await self.client.search(request)
+
+        document_list = []
+        async for result in search_results_pager:
+            document = self._parse_search_result(result)
+            document_list.append(document)
+
+        return document_list
+    
+    def _build_content_search_spec(self) -> discoveryengine.SearchRequest.ContentSearchSpec:
+        """Builds the content search specification."""
+        return discoveryengine.SearchRequest.ContentSearchSpec(
+            snippet_spec=discoveryengine.SearchRequest.ContentSearchSpec.SnippetSpec(
+                return_snippet=True
+            ),
+            extractive_content_spec=discoveryengine.SearchRequest.ContentSearchSpec.ExtractiveContentSpec(
+                max_extractive_segment_count=5,
+            ),
+            summary_spec=discoveryengine.SearchRequest.ContentSearchSpec.SummarySpec(
+                summary_result_count=5,
+                include_citations=True,
+                ignore_adversarial_query=True,
+                ignore_non_summary_seeking_query=True,
+                model_prompt_spec=discoveryengine.SearchRequest.ContentSearchSpec.SummarySpec.ModelPromptSpec(
+                    preamble="YOUR_CUSTOM_PROMPT"
+                ),
+                model_spec=discoveryengine.SearchRequest.ContentSearchSpec.SummarySpec.ModelSpec(
+                    version="stable",
+                ),
+            ),
+        )
+
+    def _parse_search_result(self, result: discoveryengine.SearchResponse.SearchResult) -> Document:
+        """
+        Parses a single search result into a Document object.
+        """
+        derived_struct = result.document.derived_struct_data
+        snippet_list = [
+            item.get("snippet", "") for item in derived_struct.get("snippets", [])
+        ]
+        extractive_segments = derived_struct.get("extractive_segments", [])
+        page_number = 1
         if extractive_segments:
-            page = extractive_segments[0].get("pageNumber", 1)
-        segment_content = '\n'.join(segment.get("content", "")for segment in extractive_segments) 
-        authenticated_link = authenticated_url(derived_struct_data.get("link", ""))
-        document = Document(
-            title=derived_struct_data.get("title", ""),
+            page_number = int(extractive_segments[0].get("pageNumber", 1))
+        
+        segment_content = '\n'.join(
+            segment.get("content", "") for segment in extractive_segments
+        )
+        gcs_link = derived_struct.get("link", "")
+        authenticated_link = self._get_authenticated_url(gcs_link)
+
+        return Document(
+            title=derived_struct.get("title", ""),
             snippets=snippet_list,
             link=authenticated_link,
-            page_number=page,
-            link_with_page=f'{authenticated_link}#page={page}',
+            page_number=page_number,
+            link_with_page=f'{authenticated_link}#page={page_number}',
             segment_content=segment_content
         )
 
-        document_list.append(document)
-
-    return document_list
-
-def authenticated_url(
-    gsutil_uri: str
-) -> str:
-    """
-    Returns an authenticated URL for a Google Cloud Storage URI.
-    
-    Args:
-        gsutil_uri (str): The Google Cloud Storage URI.
-    
-    Returns:
-        str: The authenticated URL.
-    """
-    if not gsutil_uri.startswith("gs://"):
-        raise ValueError("The provided URI must start with 'gs://'")
-    gsutil_uri = gsutil_uri[5:]  # Remove 'gs://'
-    return f"https://storage.mtls.cloud.google.com/{gsutil_uri}"
+    @staticmethod
+    def _get_authenticated_url(gsutil_uri: str) -> str:
+        """
+        Converts a gs:// URI to a usable HTTPS URL.
+        """
+        if not gsutil_uri:
+            return ""
+        if not gsutil_uri.startswith("gs://"):
+            logging.warning(f"URI '{gsutil_uri}' is not a valid GCS URI. Returning as is.")
+            return gsutil_uri
+        
+        path = gsutil_uri.replace("gs://", "", 1)
+        return f"https://storage.mtls.cloud.google.com/{path}"
