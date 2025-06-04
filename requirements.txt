@@ -3,7 +3,7 @@ pydantic==2.11.2
 python-dotenv==1.1.0
 uvicorn==0.34.0
 langchain-google-alloydb-pg>=0.7.0
-google-genai==1.9.0
+google-genai
 google-cloud-aiplatform[agent_engines,langchain]
 google-cloud-videointelligence
 langchain-google-vertexai
@@ -14,3 +14,4 @@ pg8000
 pandas
 google-cloud-videointelligence
 google-cloud-discoveryengine
+google-cloud-video-transcoder

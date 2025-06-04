@@ -7,6 +7,8 @@ class ChatInterface {
         this.premiumMessage = '';
         this.fileLinks = [];
         this.fileNames = [];
+        this.thumbnailLinks = [];
+        this.partnerNames = [];
         this.pdfDocuments = []; // ampma: Initialize pdfDocuments
         this.initializeEventListeners();
     }
@@ -94,6 +96,8 @@ class ChatInterface {
             if (data.premium_applicable) {
                 this.fileLinks = data.video_file_links;
                 this.fileNames = data.video_file_names;
+                this.thumbnailLinks = data.thumbnail_links;
+                this.partnerNames = data.partner_names;
                 this.pdfDocuments = data.pdf_documents;
             }
 
@@ -129,12 +133,16 @@ class ChatInterface {
         let isPaid = this.isPaid;
         let fileLinks = this.fileLinks;
         let fileNames = this.fileNames;
+        let thumbnailLinks = this.thumbnailLinks;
+        let partnerNames = this.partnerNames;
         this.chatHistory.push({role: role, content: content, isPremium: isPremium});
 
         console.log('<addMessage>: isPremium: ',isPremium)
         console.log('<addMessage>: Premium Response: ', this.premiumMessage)
         console.log('<addMessage>: fileLinks: ', fileLinks)
         console.log('<addMessage>: videoFileName: ', fileNames)
+        console.log('<addMessage>: thumbnailLinks: ', thumbnailLinks)
+        console.log('<addMessage>: partnerNames: ', partnerNames)
 
         if (role === 'user') {
             messageDiv.className = 'user-message';
@@ -149,11 +157,34 @@ class ChatInterface {
 
             if (isPaid && isPremium) {
                 for (let i = 0; i < fileLinks.length; i++) {
-                    videoChipComponent += `<div class="premium-prompt-chip">
-                    <span class="material-icons"><img class="partner-logos" src="static/images/thoughtleaders-logo.png" alt="Thought Leaders"></span>
+                    videoChipComponent += `
 
-                    <button class="chip-button"> <a class='video-link' href="${fileLinks[i]}" target="_blank">${fileNames[i]}</a></button>
-                    </div>`
+                    <div class="rag-card">
+                        <div class="card-header">
+                            <span class="card-url">${fileLinks[i]}</span>
+                        </div>
+
+                        <div class="card-body">
+                            <h4 class="card-title">
+                                 <span class="material-icons video-icon">video_library</span>
+                                <a href="${fileLinks[i]}" target="_blank" title="${fileNames[i]}"> ${fileNames[i]} </a>
+
+                            </h4>
+                            <div class="thumbnail-container">
+                                <a href="${fileLinks[i]}" target="_blank" title="${fileNames[i]}">
+                                  <img class="thumbnail" src="${thumbnailLinks[i]}" alt="${fileNames[i]}">
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="card-footer">
+                            <span>Source: ${partnerNames[i]}</span>
+                            <a class="material-icons preview-icon" title="Preview" href="${fileLinks[i]}" target="_blank">visibility</a>
+                        </div>
+                </div>
+                    </div>
+
+                    `
 
                     console.log('in for loop for', fileLinks[i]);
                     console.log(videoChipComponent);
@@ -234,7 +265,7 @@ class ChatInterface {
         this.pdfDocuments.forEach(doc => {
             // Create the main card element
             const card = document.createElement('div');
-            card.className = 'pdf-card';
+            card.className = 'rag-card';
 
             // Use innerHTML to build the card structure
             card.innerHTML = `
@@ -244,7 +275,7 @@ class ChatInterface {
                 <div class="card-body">
                     <h4 class="card-title">
                         <span class="material-icons pdf-icon">picture_as_pdf</span>
-                        <a href="${doc.link}" target="_blank" title="${doc.title}">${doc.title}</a>
+                        <a href="${doc.link}" target="_blank" title="${doc.title}"> ${doc.title}</a>
                     </h4>
                     <p class="card-snippet">${doc.snippets && doc.snippets.length > 0 ? doc.snippets.join(" ") : 'No snippet available.'}</p>
                 </div>

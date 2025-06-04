@@ -4,7 +4,6 @@ from pydantic import BaseModel, Field
 
 from google import genai
 from google.genai import types
-from google.genai.types import Part, Content
 import logging
 from config import get_settings
 from search import Document
@@ -18,26 +17,32 @@ logger = logging.getLogger(__name__)
 
 
 class SynthesizedResponse(BaseModel):
-    thought_process: List[str] = Field(
-        description="List of thoughts that the AI assistant had while synthesizing the answer"
+    thought_process: str = Field(
+        description="Thoughts that the AI assistant had while synthesizing the answer"
     )
     file_link: List[str] = Field(
-    description="A list of video file paths associated with the context")
-    partner_name: str = Field(
-        description="The name of the partner associated with the context"
+        description="A list of video file paths associated with the context"
+    )
+    partner_name: List[str] = Field(
+        description="The list of the partner associated with the context"
     )
     file_name: List[str] = Field(
         description="A list of file name associated with the context"
+    )
+    thumbnail_link: List[str] = Field(
+        description="A list of thumbnail links associated with the context"
     )
     answer: str = Field(description="The synthesized answer to the user's question")
     enough_context: bool = Field(
         description="Whether the assistant has enough context to answer the question"
     )
 
-class Synthesizer:
 
+class Synthesizer:
     @staticmethod
-    def generate_response(question: str, video_context: pd.DataFrame, documents: List[Document]) -> SynthesizedResponse:
+    def generate_response(
+        question: str, video_context: pd.DataFrame, documents: List[Document]
+    ) -> SynthesizedResponse:
         """Generates a synthesized response based on the question and context.
 
         Args:
@@ -48,7 +53,14 @@ class Synthesizer:
             A SynthesizedResponse containing thought process and answer.
         """
         video_context_str = Synthesizer.dataframe_to_json(
-            video_context, columns_to_keep=["video_file_path", "page_content", "partner", "file_name"]
+            video_context,
+            columns_to_keep=[
+                "video_file_path",
+                "page_content",
+                "partner",
+                "file_name",
+                "thumbnail_uri",
+            ],
         )
         documents_str = ".".join([doc.segment_content for doc in documents])
 
@@ -63,11 +75,26 @@ class Synthesizer:
             2. The context is retrieved based on cosine similarity, so some information might be missing or irrelevant.
             3. Do not use first person perspective.
             4. Do not make up or infer information not present in the provided context.
-            5. Do not include the file link itself.
-            6. Maintain a helpful and professional tone appropriate for customer service.
+            5. Maintain a helpful and professional tone appropriate for customer service.
 
             Here is the relevant context retrieved from the knowledge database:
             {video_context_str} {documents_str}
+
+            # Output Format
+            Your response MUST be a JSON object that strictly adheres to the following schema.
+            Ensure all fields are present and correctly typed.
+
+            ```json
+            {{
+                "thought_process": "",
+                "file_link": [],
+                "partner_name": [],
+                "file_name": [],
+                "thumbnail_link": [],
+                "answer": "",
+                "enough_context": true or false
+            }}
+        ```
 
             Review the question from the user:
         """
@@ -79,21 +106,22 @@ class Synthesizer:
             location=get_settings().llm.gcp_location,
         )
         generate_content_config = types.GenerateContentConfig(
-            temperature = 0.3,
+            temperature=0.3,
             system_instruction=SYSTEM_PROMPT,
             response_mime_type="application/json",
             response_schema=SynthesizedResponse,
-            tools=[]
+            tools=[],
         )
         response = client.models.generate_content(
-            model = get_settings().llm.gcp_model,
-            contents = question,
-            config = generate_content_config,
+            model=get_settings().llm.gcp_model,
+            contents=question,
+            config=generate_content_config,
         )
 
-        logger.info(f"Synthesizer.py: Synthesized response received.")
+        logger.info(f"Synthesizer.py: Synthesized response received: {response.text}")
+        logger.info(f"Synthesizer.py: Parsed response received: {response.parsed}")
 
-        return response
+        return response.parsed
 
     @staticmethod
     def dataframe_to_json(
@@ -114,5 +142,3 @@ class Synthesizer:
             logger.warning("The context DataFrame is empty.")
             return "[]"
         return context[columns_to_keep].to_json(orient="records", indent=2)
-
-

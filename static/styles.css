@@ -1205,6 +1205,8 @@ body {
     }
 }
 
+/* Video Card Styling */
+
 .premium-prompt-chip {
     margin-top: 16px;
     padding: 12px 16px;
@@ -1240,10 +1242,22 @@ body {
 }
 
 .video-link {
-
     color: white;
     text-decoration: none;
+}
 
+.thumbnail-container {
+    width: 100%;
+    max-height: 400px;
+    overflow: hidden;
+}
+
+.thumbnail {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    display: block;
+    padding-bottom: 30px;
 }
 
 
@@ -1270,7 +1284,7 @@ body {
 }
 
 /* PDF Card Styling */
-.pdf-card {
+.rag-card {
     background-color: var(--card-bg, #303134); /* Use variable for card background */
     color: var(--text-color, #e3e3e3);         /* Use variable for default text */
     border: 1px solid var(--border-color, #3c4043); /* Use variable for border */
@@ -1283,18 +1297,20 @@ body {
     display: flex;
     flex-direction: column;
     font-family: 'Google Sans', sans-serif; /* Ensure font consistency */
+    overflow: hidden;
+    margin-top: 16px;
 }
 
-.pdf-card:hover {
+.rag-card:hover {
     background-color: var(--hover-color, #3c4043); /* Use variable for hover state */
     transform: translateY(-2px);
 }
 
-.pdf-card .card-header {
+.rag-card .card-header {
     margin-bottom: 12px;
 }
 
-.pdf-card .card-url {
+.rag-card .card-url {
     font-size: 0.8em;
     color: #9aa0a6; /* Consistent secondary text color from your theme */
     display: block;
@@ -1303,11 +1319,11 @@ body {
     text-overflow: ellipsis;
 }
 
-.pdf-card .card-body {
+.rag-card .card-body {
     flex-grow: 1;
 }
 
-.pdf-card .card-title {
+.rag-card .card-title {
     font-size: 1.1em;
     font-weight: 500;
     margin: 0 0 10px 0;
@@ -1316,8 +1332,8 @@ body {
 }
 
 /* Using red logo as a specific branding choice, as previously requested */
-.pdf-card .pdf-icon-logo {
-    background-color: #fa5349; 
+.rag-card .pdf-icon-logo {
+    background-color: #fa5349;
     color: #ffffff;
     font-size: 18px;
     padding: 4px;
@@ -1328,7 +1344,7 @@ body {
     justify-content: center;
 }
 
-.pdf-card .card-title a {
+.rag-card .card-title a {
     text-decoration: none;
     color: var(--gemini-blue, #8ab4f8); /* Use variable for primary link color */
     white-space: nowrap;
@@ -1336,11 +1352,11 @@ body {
     text-overflow: ellipsis;
 }
 
-.pdf-card .card-title a:hover {
+.rag-card .card-title a:hover {
     text-decoration: underline;
 }
 
-.pdf-card .card-snippet {
+.rag-card .card-snippet {
     font-size: 0.9em;
     color: var(--text-color, #e3e3e3); /* Use variable for main text */
     margin: 0 0 12px 0;
@@ -1355,7 +1371,7 @@ body {
     text-overflow: ellipsis;
 }
 
-.pdf-card .card-footer {
+.rag-card .card-footer {
     font-size: 0.85em;
     color: #9aa0a6; /* Consistent secondary text color */
     display: flex;
@@ -1366,7 +1382,7 @@ body {
     border-top: 1px solid var(--border-color, #3c4043); /* Use variable for separator */
 }
 
-.pdf-card .preview-icon {
+.rag-card .preview-icon {
     font-size: 22px;
     color: var(--gemini-blue, #8ab4f8); /* Use variable for interactive icon */
     cursor: pointer;
@@ -1374,6 +1390,6 @@ body {
     text-decoration: none;
 }
 
-.pdf-card .preview-icon:hover {
+.rag-card .preview-icon:hover {
     filter: brightness(1.2); /* A simple way to lighten on hover */
 }

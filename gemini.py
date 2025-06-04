@@ -32,6 +32,8 @@ class Response:
     gemini_response: Content
     video_file_links: str
     video_file_names: str
+    thumbnail_links: str
+    partner_names: str
     premium_response: Content = None
     premium_applicable: bool = False
     pdf_documents: List[Document] = None
@@ -116,28 +118,32 @@ def generate(
 
         results = vec.similarity_search(user_turn)
         logger.info("Generating response from Synthesizer...")
-        response = Synthesizer.generate_response(question=user_turn, video_context=results, 
-                                                  documents=documents)
 
         try:
-            result = response.parsed
-            logger.info(f"Gemini.py: Gemini response {result}.")
-            premium_bot_answer = result.answer
-            video_file_link = result.file_link
-            video_file_name = result.file_name
+            response = Synthesizer.generate_response(
+                question=user_turn, video_context=results, documents=documents
+            )
+
+            logger.info(f"gemini.py: Synthesized response received: {response}")
+
+            premium_bot_answer = response.answer
+            video_file_link = response.file_link
+            video_file_name = response.file_name
+            thumbnail_link = response.thumbnail_link
+            partner_name = response.partner_name
         except (AttributeError, TypeError) as e:
             logger.error(f"Failed to parse Synthesizer response: {e}")
-            premium_bot_answer = "A framework for guiding thinking from an initial idea to final communication, as used by elite consulting firms, involves several key steps. It begins by defining the question to understand the issue and why stakeholders care, then formulating an initial hypothesis as a best guess for the answer. The next step is to structure the argument by building an 'architecture' for the logic. This architecture is then transformed into a simple narrative or story that the audience can easily follow and remember. Early in the process, it is crucial to discuss this story with key stakeholders to solicit input and build buy-in, which helps identify potential objections and risks before extensive work is done. Based on this, the required analysis is identified to gather facts and prove or disprove the hypothesis. Finally, the recommendation is packaged, which can take various forms such as a memo, presentation, or conversation. This method is iterative, allowing for adjustments as new information is learned, and aims to ensure clarity, a clear argument, and a resonant pitch for the idea."
-            video_file_link = [
-                "https://storage.mtls.cloud.google.com/maylyan-rag/20200517%20STC%20Lesson%2001%20Intro.mp4",
-                "https://storage.mtls.cloud.google.com/maylyan-rag/20200517%20STC%20Lesson%2002%20Process.mp4",
-                "https://storage.mtls.cloud.google.com/maylyan-rag/20200517%20STC%20Lesson%2007%20Story.mp4",
-            ]
-            video_file_name = [
-                "Lesson 01 Intro",
-                "Lesson 02 Process",
-                "Lesson 07 Story",
-            ]
+            # premium_bot_answer = "A framework for guiding thinking from an initial idea to final communication, as used by elite consulting firms, involves several key steps. It begins by defining the question to understand the issue and why stakeholders care, then formulating an initial hypothesis as a best guess for the answer. The next step is to structure the argument by building an 'architecture' for the logic. This architecture is then transformed into a simple narrative or story that the audience can easily follow and remember. Early in the process, it is crucial to discuss this story with key stakeholders to solicit input and build buy-in, which helps identify potential objections and risks before extensive work is done. Based on this, the required analysis is identified to gather facts and prove or disprove the hypothesis. Finally, the recommendation is packaged, which can take various forms such as a memo, presentation, or conversation. This method is iterative, allowing for adjustments as new information is learned, and aims to ensure clarity, a clear argument, and a resonant pitch for the idea."
+            # video_file_link = [
+            #     "https://storage.mtls.cloud.google.com/maylyan-rag/20200517%20STC%20Lesson%2001%20Intro.mp4",
+            #     "https://storage.mtls.cloud.google.com/maylyan-rag/20200517%20STC%20Lesson%2002%20Process.mp4",
+            #     "https://storage.mtls.cloud.google.com/maylyan-rag/20200517%20STC%20Lesson%2007%20Story.mp4",
+            # ]
+            # video_file_name = [
+            #     "Lesson 01 Intro",
+            #     "Lesson 02 Process",
+            #     "Lesson 07 Story",
+            # ]
 
         # enough_context = result.enough_context
 
@@ -148,6 +154,8 @@ def generate(
         premium_bot_answer = "N/A"
         video_file_link = "N/A"
         video_file_name = "N/A"
+        thumbnail_link = "N/A"
+        partner_name = "N/A"
         documents = []
 
     gemini_response_content = Content(
@@ -163,6 +171,8 @@ def generate(
         gemini_response=gemini_response_content,
         video_file_links=video_file_link,
         video_file_names=video_file_name,
+        thumbnail_links=thumbnail_link,
+        partner_names=partner_name,
         premium_response=premium_response_content,
         premium_applicable=premium_applicable,
         pdf_documents=documents,
