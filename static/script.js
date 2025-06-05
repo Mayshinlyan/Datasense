@@ -10,7 +10,11 @@ class ChatInterface {
         this.thumbnailLinks = [];
         this.partnerNames = [];
         this.pdfDocuments = []; // ampma: Initialize pdfDocuments
+        this.clientId = "user123";
+        this.socket = null;
+        this.status = '';
         this.initializeEventListeners();
+        this.initializeWebSocket();
     }
 
     initializeEventListeners() {
@@ -51,6 +55,66 @@ class ChatInterface {
         });
     }
 
+    initializeWebSocket() {
+        // Initialize WebSocket connection
+        this.socket = new WebSocket(`ws://localhost:8000/ws/${this.clientId}`);
+
+        this.socket.onopen = () => {
+            console.log("WebSocket connection established");
+        };
+
+        this.socket.onmessage = async (event) => {
+            console.log("Received WebSocket message:", event.data);
+            const data = JSON.parse(event.data);
+
+            switch(data.status) {
+                case "started":
+                    console.log("Premium response generation started");
+                    this.status = "Premium response generation started"
+                    if(this.isPaid){
+                    await this.showStatus("Premium response generation started");}
+                    break;
+                case "searching":
+                case "searching_videos":
+                case "synthesizing":
+                    console.log(data.message);
+                    this.status = data.message
+                    if(this.isPaid){
+                    await this.showStatus(data.message);}
+                    break;
+                case "completed":
+                    console.log("Premium response completed");
+                    this.status = "Premium response completed";
+                    // Handle the premium response data
+                    if (data.data) {
+                        this.premiumMessage = data.data.gemini_response;
+                        this.fileLinks = data.data.video_file_links;
+                        this.fileNames = data.data.video_file_names;
+                        this.thumbnailLinks = data.data.thumbnail_links;
+                        this.partnerNames = data.data.partner_names;
+                        // Update UI with premium content
+
+                        if(this.isPaid){
+                        await this.showPremiumContent();}
+                        }
+                    break;
+                case "error":
+                    console.error("Premium response error:", data.message);
+                    break;
+            }
+        };
+
+        this.socket.onclose = () => {
+            console.log("WebSocket connection closed");
+            // Attempt to reconnect after a delay
+            setTimeout(() => this.initializeWebSocket(), 5000);
+        };
+
+        this.socket.onerror = (error) => {
+            console.error("WebSocket error:", error);
+        };
+    }
+
     async handleUserInput() {
         console.log("handleUserInput called");
         const inputElement = document.getElementById('userInput');
@@ -63,7 +127,6 @@ class ChatInterface {
             await new Promise(resolve => setTimeout(resolve, 500));
             welcomeContainer.remove();
          }
-
 
         if (messageText === '' || this.isTyping) return;
 
@@ -80,42 +143,30 @@ class ChatInterface {
                 },
                 body: JSON.stringify({
                     message: messageText,
-                    chatHistory: this.chatHistory
+                    chatHistory: this.chatHistory,
+                    clientId: this.clientId
                  })
             });
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
+            } else {
+
+                // this is not triggering async. Need to fix.
+                // this.showStatus("Determining if premium response is applicable...");
+
+
+                const data = await response.json();
+
+                console.log('<HandleUserInput> Response from /chat: ', data);
+
+                this.isPremium = data.premium_applicable;
+                // Handle response from the server
+                await this.addMessage('assistant', data.gemini_response)
+                console.log('<HandleUserInput> Gemini Response: ',data.gemini_response)
+                console.log('<HandleUserInput> data.premium_applicable: ',data.premium_applicable)
             }
 
-            const data = await response.json();
-            console.log('<HandleUserInput> Response from /chat: ', data);
-            this.premiumMessage = data.premium_response.parts[0].text
-            this.isPremium = data.premium_applicable;
-
-            if (data.premium_applicable) {
-                this.fileLinks = data.video_file_links;
-                this.fileNames = data.video_file_names;
-                this.thumbnailLinks = data.thumbnail_links;
-                this.partnerNames = data.partner_names;
-                this.pdfDocuments = data.pdf_documents;
-            }
-
-            // Handle response from the server
-            await this.addMessage('assistant', data.gemini_response.parts[0].text)
-
-
-            console.log('<HandleUserInput> Gemini Response: ',data.gemini_response.parts[0].text)
-            console.log('<HandleUserInput>: Premium Response: ',data.premium_response.parts[0].text)
-            console.log('<HandleUserInput> data.premium_flag: ',data.premium_flag)
-
-
-
-            // Check if premium content should be shown
-            //if (data.premium_flag) {
-            //    await new Promise(resolve => setTimeout(resolve, 1000));
-            //    this.showUpgradeModal();
-            //}
         } catch (error) {
             console.log("Error sending message to /chat: ", error);
             await this.addMessage('assistant', "Sorry, there was an error processing your request. Please try again.");
@@ -197,17 +248,15 @@ class ChatInterface {
             // <button class="try-now-button"> <a class='video-link' href="${this.videoFileLink[0]}" target="_blank">Watch Video</a></button>
 
             // </div>` : '';
-            console.log('video chip', videoChipComponent);
+            // console.log('video chip', videoChipComponent);
 
-            const isPremiumPrompt = false;
             const premiumChip = (isPremium && !isPaid) ? `
                 <div class="premium-prompt-chip">
                     <span class="material-icons">verified</span>
                     Get Premium Answer with DataSense Partner Data
                     <button class="try-now-button chip-button">Try now</button>
                 </div>
-            ` : '';
-
+            ` : ''
 
             messageDiv.innerHTML = `
                 <div class="message-avatar">
@@ -517,7 +566,8 @@ class ChatInterface {
 
 
             this.isPaid = true;
-            await this.showPremiumContent();
+            await this.showStatus(this.status);
+            // await this.showPremiumContent();
         };
 
         // Add after creating the buyModal
@@ -550,7 +600,13 @@ class ChatInterface {
     async showPremiumContent() {
         const premiumMessage = this.premiumMessage;
         console.log('<showPremiumContent> premiumMessage', premiumMessage);
+        this.status = "";
         await this.addMessage('assistant', premiumMessage);
+    }
+
+    async showStatus(statusMessage) {
+        console.log('<showStatus> status', statusMessage);
+        await this.addMessage('assistant', statusMessage);
     }
 }
 
@@ -583,4 +639,5 @@ function smoothScrollTo(element, target) {
 // Initialize the chat interface when the page loads
 document.addEventListener('DOMContentLoaded', () => {
     window.chatInterface = new ChatInterface();
+
 });

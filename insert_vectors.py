@@ -37,7 +37,7 @@ async def insert_records_to_vector_store(vec, transcribed_csv_file: str):
 async def main():
     """Main function to insert records into the vector store."""
     # Initialize VectorStore
-    vec = VectorStore()
+    vec = await VectorStore.create()
 
     await insert_records_to_vector_store(vec, "./data/output_transcribed_videodata.csv")
 

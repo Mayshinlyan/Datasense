@@ -13,9 +13,9 @@ from database import VectorStore
 from synthesizer import Synthesizer
 from pydantic import BaseModel, Field
 from search import SearchService, Document
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 
-import logging
+import logging, asyncio
 
 # Set up logging configuration
 logging.basicConfig(
@@ -27,9 +27,9 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class Response:
+class PremiumResponse:
     chat_history: List[Content]
-    gemini_response: Content
+    gemini_response: str
     video_file_links: str
     video_file_names: str
     thumbnail_links: str
@@ -37,6 +37,13 @@ class Response:
     premium_response: Content = None
     premium_applicable: bool = False
     pdf_documents: List[Document] = None
+
+
+@dataclass
+class NormalResponse:
+    chat_history: List[Content]
+    gemini_response: str
+    premium_applicable: bool = False
 
 
 # Response model for normal Gemini response
@@ -50,11 +57,15 @@ class GeminiResponse(BaseModel):
     )
 
 
-async def generate(
-    chat_history: List[Content], user_turn: Union[Content, str], vec: VectorStore, search_engine: SearchService
-) -> Response:
+async def generate_normal_response(
+    chat_history: List[Content],
+    user_turn: Union[Content, str],
+    client_id: str,
+    vector_store: VectorStore,
+    search_engine: SearchService,
+) -> NormalResponse:
     """
-    Call the model, handles both Content and Str type inputs.
+    Normal Gemini response without RAG.
     """
 
     logger.info("Gemini.py: Generating response from Gemini model.")
@@ -97,10 +108,90 @@ async def generate(
     logger.info(f"Gemini.py: Normal Gemini response received. ")
     # ==== END: Normal Gemini Response without RAG ==== #
 
-    # ==== START: Trigger this when the response is premium worthy ==== #
+    # gemini_response_content = Content(
+    #     role="assistant", parts=[Part.from_text(text=bot_answer)]
+    # )
+
     if premium_applicable:
+        logger.info(
+            "Gemini.py: Premium response is applicable. Generating premium response."
+        )
+
+        asyncio.create_task(
+            generate_premium_response(
+                chat_history, user_turn_content, client_id, vector_store, search_engine
+            )
+        )
+    # ==== END: Trigger this when the response is premium worthy ==== #
+
+    return NormalResponse(
+        chat_history=chat_history,
+        gemini_response=bot_answer,
+        premium_applicable=premium_applicable,
+    )
+
+
+from typing import Dict
+from fastapi import WebSocket
+import json
+
+# Global store for active WebSocket connections
+active_connections: Dict[str, WebSocket] = {}
+
+
+async def generate_premium_response(
+    chat_history: List[Content],
+    user_turn_content: Content,
+    client_id: str,
+    vec: VectorStore,
+    search_engine: SearchService,
+):
+    """
+    Premium Gemini response with RAG.
+    """
+    # ==== START: Trigger this when the response is premium worthy ==== #
+    logger.info(
+        f"Gemini.py: Starting premium response generation for client {client_id}"
+    )
+
+    websocket = active_connections.get(client_id)
+
+    logger.info(f"Gemini.py: Active connections: {websocket}")
+
+    if not websocket:
+        logger.error(
+            f"Gemini.py: No active WebSocket connection found for client {client_id}"
+        )
+        return
+
+    try:
+        await websocket.send_text(
+            json.dumps(
+                {
+                    "status": "started",
+                    "message": "Starting premium response generation...",
+                }
+            )
+        )
+    except Exception as e:
+        logger.error(
+            f"Gemini.py: Failed to send initial message to WebSocket for client {client_id}: {e}"
+        )
+        return
+
+    try:
+        user_question = user_turn_content.parts[0].text
+
         # ==== START: Fetching PDF for RAG  ==== #
-        documents = await search_engine.search(user_turn_content.parts[0].text)
+        await websocket.send_text(
+            json.dumps(
+                {
+                    "status": "searching",
+                    "message": "Searching for relevant documents...",
+                }
+            )
+        )
+        documents = await search_engine.search(user_question)
 
         # ==== END: Fetching PDF for RAG  ==== #
 
@@ -110,12 +201,27 @@ async def generate(
             raise ValueError("Vector store should not be None.")
         logger.info("starting similarity search...")
 
-        results = vec.similarity_search(user_turn)
+        await websocket.send_text(
+            json.dumps(
+                {
+                    "status": "searching_videos",
+                    "message": "Searching for relevant videos...",
+                }
+            )
+        )
+
+        results = vec.similarity_search(user_question)
         logger.info("Generating response from Synthesizer...")
 
+        await websocket.send_text(
+            json.dumps(
+                {"status": "synthesizing", "message": "Synthesizing the findings..."}
+            )
+        )
+
         try:
-            response = Synthesizer.generate_response(
-                question=user_turn, video_context=results, documents=documents
+            response = await Synthesizer.generate_response(
+                question=user_question, video_context=results, documents=documents
             )
 
             logger.info(f"gemini.py: Synthesized response received: {response}")
@@ -125,49 +231,52 @@ async def generate(
             video_file_name = response.file_name
             thumbnail_link = response.thumbnail_link
             partner_name = response.partner_name
+
+            # premium_response_content = Content(
+            #     role="assistant", parts=[Part.from_text(text=premium_bot_answer)]
+            # )
+
+            await websocket.send_text(
+                json.dumps(
+                    {
+                        "status": "completed",
+                        "data": {
+                            "gemini_response": premium_bot_answer,
+                            "video_file_links": video_file_link,
+                            "video_file_names": video_file_name,
+                            "thumbnail_links": thumbnail_link,
+                            "partner_names": partner_name,
+                        },
+                    }
+                )
+            )
         except (AttributeError, TypeError) as e:
             logger.error(f"Failed to parse Synthesizer response: {e}")
-            # premium_bot_answer = "A framework for guiding thinking from an initial idea to final communication, as used by elite consulting firms, involves several key steps. It begins by defining the question to understand the issue and why stakeholders care, then formulating an initial hypothesis as a best guess for the answer. The next step is to structure the argument by building an 'architecture' for the logic. This architecture is then transformed into a simple narrative or story that the audience can easily follow and remember. Early in the process, it is crucial to discuss this story with key stakeholders to solicit input and build buy-in, which helps identify potential objections and risks before extensive work is done. Based on this, the required analysis is identified to gather facts and prove or disprove the hypothesis. Finally, the recommendation is packaged, which can take various forms such as a memo, presentation, or conversation. This method is iterative, allowing for adjustments as new information is learned, and aims to ensure clarity, a clear argument, and a resonant pitch for the idea."
-            # video_file_link = [
-            #     "https://storage.mtls.cloud.google.com/maylyan-rag/20200517%20STC%20Lesson%2001%20Intro.mp4",
-            #     "https://storage.mtls.cloud.google.com/maylyan-rag/20200517%20STC%20Lesson%2002%20Process.mp4",
-            #     "https://storage.mtls.cloud.google.com/maylyan-rag/20200517%20STC%20Lesson%2007%20Story.mp4",
-            # ]
-            # video_file_name = [
-            #     "Lesson 01 Intro",
-            #     "Lesson 02 Process",
-            #     "Lesson 07 Story",
-            # ]
+            await websocket.send_text(
+                json.dumps(
+                    {
+                        "status": "error",
+                        "message": "Failed to generate premium response",
+                        "error": str(e),
+                    }
+                )
+            )
 
-        # enough_context = result.enough_context
-
-        logger.info(
-            f"Gemini.py: Premium model response received as: {premium_bot_answer} with video link: {video_file_link} and file names: {video_file_name}"
+    except Exception as e:
+        logger.error(
+            f"Gemini.py: Error during premium response generation for client {client_id}: {e}"
         )
-    else:
-        premium_bot_answer = "N/A"
-        video_file_link = "N/A"
-        video_file_name = "N/A"
-        thumbnail_link = "N/A"
-        partner_name = "N/A"
-        documents = []
-
-    gemini_response_content = Content(
-        role="assistant", parts=[Part.from_text(text=bot_answer)]
-    )
-    premium_response_content = Content(
-        role="assistant", parts=[Part.from_text(text=premium_bot_answer)]
-    )
-    # ==== END: Trigger this when the response is premium worthy ==== #
-
-    return Response(
-        chat_history=chat_history,
-        gemini_response=gemini_response_content,
-        video_file_links=video_file_link,
-        video_file_names=video_file_name,
-        thumbnail_links=thumbnail_link,
-        partner_names=partner_name,
-        premium_response=premium_response_content,
-        premium_applicable=premium_applicable,
-        pdf_documents=documents,
-    )
+        try:
+            await websocket.send_text(
+                json.dumps(
+                    {
+                        "status": "error",
+                        "message": "An error occurred during premium response generation",
+                        "error": str(e),
+                    }
+                )
+            )
+        except Exception as ws_error:
+            logger.error(
+                f"Gemini.py: Failed to send error message to WebSocket for client {client_id}: {ws_error}"
+            )

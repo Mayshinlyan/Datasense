@@ -40,7 +40,7 @@ class SynthesizedResponse(BaseModel):
 
 class Synthesizer:
     @staticmethod
-    def generate_response(
+    async def generate_response(
         question: str, video_context: pd.DataFrame, documents: List[Document]
     ) -> SynthesizedResponse:
         """Generates a synthesized response based on the question and context.

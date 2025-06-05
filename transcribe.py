@@ -116,7 +116,7 @@ def generate_thumbnail(
     from google.protobuf.duration_pb2 import Duration
 
     # Create a Duration object for the offset
-    start_time_offset = Duration(seconds=3)
+    start_time_offset = Duration(seconds=4)
 
     parent = f"projects/{project_id}/locations/{location}"
     job = transcoder_v1.types.Job()
