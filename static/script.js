@@ -92,6 +92,7 @@ class ChatInterface {
                         this.fileNames = data.data.video_file_names;
                         this.thumbnailLinks = data.data.thumbnail_links;
                         this.partnerNames = data.data.partner_names;
+                        this.pdfDocuments = data.data.pdf_documents;
                         // Update UI with premium content
 
                         if(this.isPaid){

@@ -195,6 +195,7 @@ async def generate_premium_response(
 
         # ==== END: Fetching PDF for RAG  ==== #
 
+
         # ==== START: Fetching Video for RAG  ==== #
         logger.info("Generating response...")
         if vec is None:
@@ -245,7 +246,10 @@ async def generate_premium_response(
                             "video_file_links": video_file_link,
                             "video_file_names": video_file_name,
                             "thumbnail_links": thumbnail_link,
-                            "partner_names": partner_name,
+                            "partner_names": partner_name, 
+                            "pdf_documents": [
+                                asdict(doc) for doc in documents
+                            ],  # Convert Document dataclass to dict
                         },
                     }
                 )
