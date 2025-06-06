@@ -66,7 +66,6 @@ class ChatInterface {
         this.socket.onmessage = async (event) => {
             console.log("Received WebSocket message:", event.data);
             const data = JSON.parse(event.data);
-
             switch(data.status) {
                 case "started":
                     console.log("Premium response generation started");
@@ -130,6 +129,12 @@ class ChatInterface {
          }
 
         if (messageText === '' || this.isTyping) return;
+        this.premiumMessage = '';
+        this.fileLinks = [];
+        this.fileNames = [];
+        this.thumbnailLinks = [];
+        this.partnerNames = [];
+        this.pdfDocuments = [];
 
         inputElement.value = '';
         await this.addMessage('user', messageText);
