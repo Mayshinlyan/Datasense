@@ -68,13 +68,11 @@ class ChatInterface {
             const data = JSON.parse(event.data);
             switch(data.status) {
                 case "started":
-                    console.log("Premium response generation started");
-                    this.status = "Premium response generation started"
-                    if(this.isPaid){
-                    await this.showStatus("Premium response generation started");}
                     break;
                 case "searching":
+                    break;
                 case "searching_videos":
+                    break
                 case "synthesizing":
                     console.log(data.message);
                     this.status = data.message
@@ -84,6 +82,7 @@ class ChatInterface {
                 case "completed":
                     console.log("Premium response completed");
                     this.status = "Premium response completed";
+                    this.hideStatus(); 
                     // Handle the premium response data
                     if (data.data) {
                         this.premiumMessage = data.data.gemini_response;
@@ -93,7 +92,6 @@ class ChatInterface {
                         this.partnerNames = data.data.partner_names;
                         this.pdfDocuments = data.data.pdf_documents;
                         // Update UI with premium content
-
                         if(this.isPaid){
                         await this.showPremiumContent();}
                         }
@@ -119,6 +117,7 @@ class ChatInterface {
         console.log("handleUserInput called");
         const inputElement = document.getElementById('userInput');
         const messageText = inputElement.value.trim();
+        this.hideStatus();
 
          // Clear welcome message
          const welcomeContainer = document.querySelector('.welcome-container');
@@ -611,10 +610,27 @@ class ChatInterface {
     }
 
     async showStatus(statusMessage) {
-        console.log('<showStatus> status', statusMessage);
-        await this.addMessage('assistant', statusMessage);
+        const chatMessages = document.getElementById('chatMessages');
+        const oldStatusIndicator = document.getElementById('status-indicator');
+        if (oldStatusIndicator) {
+            oldStatusIndicator.remove(); 
+        }
+        const statusIndicator = document.createElement('div');
+        statusIndicator.id = 'status-indicator'; // The ID lets us find it later to remove it.
+        statusIndicator.className = 'status-indicator';
+        chatMessages.appendChild(statusIndicator);
+        statusIndicator.innerHTML = `<div class="spinner"></div> <span>${statusMessage}</span>`;
+        statusIndicator.style.display = 'flex';
+        smoothScrollTo(chatMessages, chatMessages.scrollHeight);
+    }
+   hideStatus() {
+        const statusIndicator = document.getElementById('status-indicator');
+        if (statusIndicator) {
+            statusIndicator.remove();
+        }
     }
 }
+
 
 // Smooth scroll implementation
 function smoothScrollTo(element, target) {

@@ -216,7 +216,7 @@ async def generate_premium_response(
 
         await websocket.send_text(
             json.dumps(
-                {"status": "synthesizing", "message": "Synthesizing the findings..."}
+                {"status": "synthesizing", "message": "Synthesizing Datasense response..."}
             )
         )
 

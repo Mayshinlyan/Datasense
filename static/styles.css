@@ -1393,3 +1393,28 @@ body {
 .rag-card .preview-icon:hover {
     filter: brightness(1.2); /* A simple way to lighten on hover */
 }
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    margin: 10px auto;
+    color: #888;
+    font-style: italic;
+    gap: 10px;
+}
+
+.spinner {
+    border: 3px solid #f3f3f3; /* Light grey */
+    border-top: 3px solid #888; /* Dark grey */
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
