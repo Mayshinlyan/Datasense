@@ -86,10 +86,8 @@ class ChatInterface {
                         this.thumbnailLinks = data.data.thumbnail_links;
                         this.partnerNames = data.data.partner_names;
                         this.pdfDocuments = data.data.pdf_documents;
-                        // Update UI with premium content
-                        if(this.isPaid){
-                        await this.showPremiumContent();}
-                        }
+                        this.tryDisplayPremiumContent();
+                    }
                     break;
                 case "error":
                     console.error("Premium response error:", data.message);
@@ -455,7 +453,7 @@ class ChatInterface {
         if (document.body.contains(adOverlay)) {
             adOverlay.remove();
             clearInterval(countdownInterval);
-            await this.showPremiumContent();
+            await this.tryDisplayPremiumContent();
         }
     }
 
@@ -566,8 +564,7 @@ class ChatInterface {
 
 
             this.isPaid = true;
-            await this.showStatus(this.status);
-            // await this.showPremiumContent();
+            this.tryDisplayPremiumContent();
         };
 
         // Add after creating the buyModal
@@ -623,6 +620,12 @@ class ChatInterface {
         if (statusIndicator) {
             statusIndicator.remove();
         }
+    }
+
+    async tryDisplayPremiumContent() {
+        if (this.isPaid && this.premiumMessage) {
+            await this.showPremiumContent();
+        } 
     }
 }
 
