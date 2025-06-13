@@ -139,10 +139,6 @@ class ChatInterface {
                 throw new Error(`HTTP error! status: ${response.status}`);
             } else {
 
-                // this is not triggering async. Need to fix.
-                // this.showStatus("Determining if premium response is applicable...");
-
-
                 const data = await response.json();
 
                 console.log('<HandleUserInput> Response from /chat: ', data);
@@ -589,17 +585,20 @@ class ChatInterface {
     async showPremiumContent() {
         const premiumMessage = this.premiumMessage;
         console.log('<showPremiumContent> premiumMessage', premiumMessage);
-        this.status = "";
+        this.hideStatus();
         await this.addMessage('assistant', premiumMessage);
     }
 
     async showStatus() {
+        console.log('<showStatus> status: ', this.status);
+        console.log('<showStatus> status_message: ', this.status_message);
         const chatMessages = document.getElementById('chatMessages');
         const oldStatusIndicator = document.getElementById('status-indicator');
         if (oldStatusIndicator) {
             oldStatusIndicator.remove(); 
         }
         switch (this.status) {
+            case "premium_started":
             case "searching":
             case "synthesizing":
                 if (!this.isPaid || this.normalResponsePending){
@@ -624,6 +623,8 @@ class ChatInterface {
         if (statusIndicator) {
             statusIndicator.remove();
         }
+        this.status = '';
+        this.status_message = '';
     }
 
     async tryDisplayPremiumContent() {

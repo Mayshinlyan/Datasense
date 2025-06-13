@@ -185,7 +185,7 @@ async def trigger_premium_flow(
         await websocket.send_text(
             json.dumps(
                 {
-                    "status": "started",
+                    "status": "premium_started",
                     "message": "Starting premium response generation...",
                 }
             )
