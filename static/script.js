@@ -13,8 +13,10 @@ class ChatInterface {
         this.clientId = "user123";
         this.socket = null;
         this.status = '';
+        this.status_message = '';
         this.initializeEventListeners();
         this.initializeWebSocket();
+        this.normalResponsePending = false;
     }
 
     initializeEventListeners() {
@@ -66,33 +68,18 @@ class ChatInterface {
         this.socket.onmessage = async (event) => {
             console.log("Received WebSocket message:", event.data);
             const data = JSON.parse(event.data);
-            switch(data.status) {
-                case "searching":
-                case "synthesizing":
-                    console.log(data.message);
-                    this.status = data.message
-                    if(this.isPaid){
-                    await this.showStatus(data.message);}
-                    break;
-                case "completed":
-                    console.log("Premium response completed");
-                    this.status = "Premium response completed";
-                    this.hideStatus(); 
-                    // Handle the premium response data
-                    if (data.data) {
-                        this.premiumMessage = data.data.gemini_response;
-                        this.fileLinks = data.data.video_file_links;
-                        this.fileNames = data.data.video_file_names;
-                        this.thumbnailLinks = data.data.thumbnail_links;
-                        this.partnerNames = data.data.partner_names;
-                        this.pdfDocuments = data.data.pdf_documents;
-                        this.tryDisplayPremiumContent();
-                    }
-                    break;
-                case "error":
-                    console.error("Premium response error:", data.message);
-                    break;
+            this.status = data.status;
+            this.status_message = data.message;
+            if (this.status === "completed" && data.data) {
+                this.premiumMessage = data.data.gemini_response;
+                this.fileLinks = data.data.video_file_links;
+                this.fileNames = data.data.video_file_names;
+                this.thumbnailLinks = data.data.thumbnail_links;
+                this.partnerNames = data.data.partner_names;
+                this.pdfDocuments = data.data.pdf_documents;
+                this.tryDisplayPremiumContent();
             }
+            this.showStatus();
         };
 
         this.socket.onclose = () => {
@@ -110,8 +97,7 @@ class ChatInterface {
         console.log("handleUserInput called");
         const inputElement = document.getElementById('userInput');
         const messageText = inputElement.value.trim();
-        this.hideStatus();
-
+        this.normalResponsePending = true;
          // Clear welcome message
          const welcomeContainer = document.querySelector('.welcome-container');
          if (welcomeContainer) {
@@ -130,6 +116,9 @@ class ChatInterface {
 
         inputElement.value = '';
         await this.addMessage('user', messageText);
+        this.status = "normal started";
+        this.status_message = "Just a sec...";
+        this.showStatus();
 
         // ampma: posting to /chat
         try {
@@ -160,6 +149,8 @@ class ChatInterface {
 
                 this.isPremium = data.premium_applicable;
                 // Handle response from the server
+                this.normalResponsePending = false;
+                this.hideStatus();
                 await this.addMessage('assistant', data.gemini_response)
                 console.log('<HandleUserInput> Gemini Response: ',data.gemini_response)
                 console.log('<HandleUserInput> data.premium_applicable: ',data.premium_applicable)
@@ -565,6 +556,7 @@ class ChatInterface {
 
             this.isPaid = true;
             this.tryDisplayPremiumContent();
+            this.showStatus();
         };
 
         // Add after creating the buyModal
@@ -601,17 +593,29 @@ class ChatInterface {
         await this.addMessage('assistant', premiumMessage);
     }
 
-    async showStatus(statusMessage) {
+    async showStatus() {
         const chatMessages = document.getElementById('chatMessages');
         const oldStatusIndicator = document.getElementById('status-indicator');
         if (oldStatusIndicator) {
             oldStatusIndicator.remove(); 
         }
+        switch (this.status) {
+            case "searching":
+            case "synthesizing":
+                if (!this.isPaid || this.normalResponsePending){
+                    return; // Don't show status if not paid or normal response is pending
+                }
+                break;
+            case "completed":
+            case "error":
+            case "":
+                return; // Don't show status if completed/error/empty
+        }
         const statusIndicator = document.createElement('div');
         statusIndicator.id = 'status-indicator'; // The ID lets us find it later to remove it.
         statusIndicator.className = 'status-indicator';
         chatMessages.appendChild(statusIndicator);
-        statusIndicator.innerHTML = `<div class="spinner"></div> <span>${statusMessage}</span>`;
+        statusIndicator.innerHTML = `<div class="spinner"></div> <span>${this.status_message}</span>`;
         statusIndicator.style.display = 'flex';
         smoothScrollTo(chatMessages, chatMessages.scrollHeight);
     }
