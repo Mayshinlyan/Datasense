@@ -59,7 +59,18 @@ class ChatInterface {
 
     initializeWebSocket() {
         // Initialize WebSocket connection
-        this.socket = new WebSocket(`ws://localhost:8000/ws/${this.clientId}`);
+        let wsBaseUrl;
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            // Local development
+            wsBaseUrl = 'ws://localhost:8000';
+        } else {
+            // Production (Cloud Run) - use wss and the current host
+            // If your backend is a separate Cloud Run service, you'd replace window.location.host
+            // with the URL of your backend service (e.g., 'your-backend-service-hash-region.run.app')
+            wsBaseUrl = `wss://${window.location.host}`; // or 'wss://your-backend-service-url.run.app'
+        }
+
+        this.socket = new WebSocket(`${wsBaseUrl}/ws/${this.clientId}`);
 
         this.socket.onopen = () => {
             console.log("WebSocket connection established");
