@@ -5,7 +5,6 @@ DataSense Library
 from typing import List, Dict
 from gemini import (
     generate_normal_response,
-    generate_premium_response,
     NormalResponse,
     PremiumResponse,
 )

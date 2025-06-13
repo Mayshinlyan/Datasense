@@ -67,12 +67,7 @@ class ChatInterface {
             console.log("Received WebSocket message:", event.data);
             const data = JSON.parse(event.data);
             switch(data.status) {
-                case "started":
-                    break;
                 case "searching":
-                    break;
-                case "searching_videos":
-                    break
                 case "synthesizing":
                     console.log(data.message);
                     this.status = data.message
