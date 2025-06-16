@@ -10,7 +10,7 @@ class ChatInterface {
         this.thumbnailLinks = [];
         this.partnerNames = [];
         this.pdfDocuments = []; // ampma: Initialize pdfDocuments
-        this.clientId = "user123";
+        this.clientId = crypto.randomUUID();
         this.socket = null;
         this.status = '';
         this.status_message = '';
