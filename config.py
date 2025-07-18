@@ -48,7 +48,7 @@ class LLMSettings(BaseModel):
 
     gcp_project: str = _get_config_variable("GCP_PROJECT", "lamb-puppy-215354")
     gcp_location: str = _get_config_variable("GCP_LOCATION", "us-central1")
-    gcp_model: str = _get_config_variable("GCP_MODEL", "gemini-2.5-pro-preview-05-06")
+    gcp_model: str = _get_config_variable("GCP_MODEL", "gemini-2.5-pro")
 
     # Gemini settings
     model_temperature: float = _get_config_variable("MODEL_TEMPERATURE", "0.5")

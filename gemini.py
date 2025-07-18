@@ -141,7 +141,6 @@ async def generate_normal_response(
                 chat_history, user_turn_content, client_id, vector_store, search_engine
             )
         )
-
     return NormalResponse(
         chat_history=chat_history,
         gemini_response=answer,
