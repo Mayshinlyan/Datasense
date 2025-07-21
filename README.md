@@ -50,16 +50,27 @@ docker push us-central1-docker.pkg.dev/lamb-puppy-215354/datasense/backend
 # RAG Architecture Explanation
 
 - **transcribe.py**: use this file to transcribe the video files
-    1. first upload the video files to a GCS bucket
-    2. pass the URI to this function: ```extractVideoTranscript(GCS File URI)```. Output is an object with transcription in it
-    3. Call this method to insert the transcript to a temporary CSV ```insert_transcript_to_csv(videofilepath, transcript, partner)```
+    1. first upload the video files to a GCS bucket (name of the bucket  - maylyan-rag)
+        edit input_file.csv: 
+            add file into for all files you want to transcribe (deleet old records but kep the schema)  
+    
+    run this in the terminal windwo: 
+        python /usr/local/google/home/yaninaso/Datasense/x-datasense/transcribe.py
+        results of the transcrption will be stored in utput csv file (./data/output_transcribed_videodata.csv)
+        ! delete all files from this file, only keep files that have to be added to the database 
 
-- **insert_vectors.py**: use this file to insert the csv file to alloydb vector store
-once the csv is generated run these methods
-```python
-    vec.upsert("../data/out.csv")
-    vec.create_index()  # IVFFlatIndex
-```
+- **insert_vectors.py**: use this file to insert the csv file to alloydb vector store 
+    get "Transcoder Admin" role within CGP IAM before running script
+    Run this in the terminal window: 
+        python insert_vectors.py
+        logs might show next error, the transactiption still might finish sucesfully (ignore them): 
+            Monitoring job status...
+            Job state: RUNNING
+            Transcoder job failed: []
+
+Add images for each video: 
+
+
 
 - **database.py**: contains methods to create database, vector table, similary search functions
     ```similarity_search(self, query: str) -> list[Document]:```
