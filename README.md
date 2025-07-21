@@ -50,9 +50,10 @@ docker push us-central1-docker.pkg.dev/lamb-puppy-215354/datasense/backend
 # RAG Architecture Explanation
 
 - **transcribe.py**: use this file to transcribe the video files
-    1. first upload the video files to a GCS bucket
-    2. pass the URI to this function: ```extractVideoTranscript(GCS File URI)```. Output is an object with transcription in it
-    3. Call this method to insert the transcript to a temporary CSV ```insert_transcript_to_csv(videofilepath, transcript, partner)```
+    1. Upload the video files to a GCS bucket
+    2. Create the Input CSV File with id, partner, videoFilename, GCSUri, and VideoFilePath. See the sample file in ./data/input_file.csv
+    3. Pass the Input CSV File path to this function: ```transcription_pipeline(input_csv_filepath)```. The pipeline will extract the thumbnail from the video, extract the transcript, and insert the transcipt to csv.
+    4. The output_transcribed_videodata.csv file will be generated in the data folder.
 
 - **insert_vectors.py**: use this file to insert the csv file to alloydb vector store
 once the csv is generated run these methods
