@@ -1,6 +1,7 @@
 import pandas as pd
 from database import VectorStore
 from config import setup_logging
+import asyncio
 
 logger = setup_logging()
 
@@ -44,3 +45,5 @@ async def main():
     vec.similarity_search(
         "How should I package my final recommendation, especially for senior executives who don't want lengthy documents?"
     )
+if __name__ == "__main__":
+    asyncio.run(main())

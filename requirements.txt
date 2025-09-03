@@ -15,3 +15,4 @@ pandas
 google-cloud-videointelligence
 google-cloud-discoveryengine
 google-cloud-video-transcoder
+google-generativeai

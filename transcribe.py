@@ -284,4 +284,9 @@ def transcription_pipeline(input_csv_filepath: str):
 
 def main():
     """Main function to run the script."""
+    print("starting transctioption")
     transcription_pipeline("./data/input_file.csv")
+    print("ended transaction")
+
+if __name__ == "__main__":
+    main()
